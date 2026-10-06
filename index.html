@@ -1,9 +1,10 @@
 <!doctype html>
 <!--
-  WINTERZAUBER – Team-Weihnachts-App (eine einzige Datei) · Version 0.4.0 mit Live-Räumen
-  Sofort testen: Datei im Browser öffnen, Passwort Winterzauber2026 (lokaler Modus, Daten bleiben in diesem Browser).
-  Fürs Team: nach «firebaseConfig» suchen und die Firebase-Werte eintragen. Die Anleitung und die Firestore-Regeln stehen in der App unter «Setup».
-  WICHTIG beim Update auf 0.4.0: Die Firestore-Regeln haben neue Abschnitte (presence, rooms). In der App unter «Setup» kopieren und in Firebase veröffentlichen.
+  WINTERZAUBER – Team-Weihnachts-App · Version 0.5.0 mit Live-Räumen und Räumen per Code
+  Sofort testen: Datei im Browser öffnen, Passwort Winterzauber2026 (lokaler Modus, Daten bleiben in diesem Browser, niemand sonst sieht dich).
+  Fürs Team: Die Firebase-Werte liegen in der separaten Datei «firebase-config.js» neben dieser index.html
+  (in der App unter «Setup → Firebase verbinden» erzeugen). Alternativ unten bei «firebaseConfig» eintragen.
+  WICHTIG beim Update auf 0.5.0: Die Firestore-Regeln haben einen neuen Abschnitt (rooms/{code}). Unter «Setup» kopieren und in Firebase veröffentlichen.
   Auf GitHub Pages muss die Datei exakt «index.html» heissen und die alte Datei ersetzen.
 -->
 <html lang="de">
@@ -153,6 +154,7 @@ button{cursor:pointer}
 .table th,.table td{text-align:left;padding:8px;border-bottom:1px solid #f0e6d3;vertical-align:middle}
 .table th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);background:#fbf5ea}
 .table input,.table select{width:100%;min-height:40px;border:1px solid transparent;border-radius:8px;padding:6px 8px;background:transparent}
+.table select{min-width:140px}
 .table input:hover,.table select:hover{border-color:#e3d6bb}
 .table input:focus,.table select:focus{border-color:var(--gold);background:#fffdf5}
 tr[data-status="Offen"] td:first-child{box-shadow:inset 5px 0 0 #d9455f}
@@ -259,6 +261,29 @@ tr[data-status="Versendet"]{background:#f1faf4}
 .homerooms .hr>span:first-child{flex:0 0 auto;white-space:nowrap}
 .homerooms .hr .muted{text-align:right;overflow-wrap:anywhere;min-width:0}
 .focus-item .pill{white-space:nowrap;align-self:flex-start}
+.localpill{background:rgba(179,18,46,.85)!important;border-color:var(--gold)!important;color:#fff;cursor:pointer;font-weight:700}
+.connstatus{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;padding:14px 16px;border-radius:14px;margin:0 0 18px;background:#eaf5ee;border:1px solid #cfe7d8;box-shadow:var(--shadow)}
+.connstatus.bad{background:#fdecee;border-color:#f3c2ca}
+.connstatus .cs-icon{font-size:26px;line-height:1}
+.connstatus .cs-body{flex:1 1 200px;min-width:0}
+.connstatus .cs-title{font-weight:800;margin-bottom:2px}
+.connstatus .cs-meta{font-size:14px;color:var(--muted);overflow-wrap:anywhere}
+.connstatus .cs-tip{font-size:13px;margin-top:6px}
+.roomactions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.miniform{margin-top:12px;padding:12px;border-radius:12px;background:#fbf5ea;border:1px solid #efe3cc}
+.miniform label{display:block;font-weight:600;font-size:14px;margin-bottom:6px}
+.miniform .row{flex-wrap:nowrap}
+.miniform .input{flex:1;min-width:0}
+.miniform .err{margin:6px 0 0;min-height:0}
+.codeinput{text-transform:uppercase;letter-spacing:.12em;font-weight:700}
+.roomsec{margin:20px 0 0;font-size:15px;color:var(--green);font-family:"Segoe UI",Inter,Arial,sans-serif}
+.roomsec+.roomlist{margin-top:10px}
+.roomcard .rc-code{display:inline-block;margin-left:6px;font-size:11px;font-weight:800;letter-spacing:.1em;background:rgba(255,255,255,.22);border-radius:6px;padding:1px 6px;vertical-align:2px}
+.scene-custom{background:linear-gradient(135deg,#132f52 0%,#21507a 60%,#4a86c5 130%)}
+.emptyhint{font-size:13px;color:var(--muted);padding:8px 2px}
+.roomshare{position:relative;display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:-2px 0 12px}
+.codechip{display:inline-flex;align-items:center;gap:6px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.45);border-radius:10px;padding:5px 10px;font-size:14px}
+.codechip b{font-size:18px;letter-spacing:.16em}
 .diag{margin:0;padding-left:18px}
 .diag li{margin:4px 0}
 
@@ -410,6 +435,7 @@ tr[data-status="Versendet"]{background:#f1faf4}
   <div class="brandbar">
     <div class="brand"><span class="logo" aria-hidden="true"><svg width="28" height="36"><use href="#sym-tree"/></svg></span> Winterzauber</div>
     <div class="userbox">
+      <button type="button" class="savepill localpill hidden" id="localPill" data-goto="rooms" title="Lokaler Modus: Daten nur in diesem Browser">💻 Lokal: nur dieser Browser</button>
       <button type="button" class="savepill onlinepill hidden" id="onlinePill" data-goto="rooms" aria-label="Wer ist online? Zu den Live-Räumen"><span class="dot"></span><span id="onlineText">online</span></button>
       <span class="savepill" id="savePill" data-state="saved" role="status"><span class="dot"></span><span id="saveText">Gespeichert</span></span>
       <span id="userName" class="savepill"></span>
@@ -429,7 +455,7 @@ tr[data-status="Versendet"]{background:#f1faf4}
 <main class="app">
   <nav class="nav" aria-label="Hauptnavigation">
     <button type="button" data-page="home" class="active">🏠 Start</button>
-    <button type="button" data-page="rooms">🎪 Live-Räume<span class="navbadge hidden" id="roomBadge" aria-label="ungelesene Nachrichten"></span></button>
+    <button type="button" data-page="rooms" id="navRooms">🎪 Live-Räume<span class="navbadge hidden" id="roomBadge"></span></button>
     <button type="button" data-page="calendar">📅 Adventskalender</button>
     <button type="button" data-page="cards">✉️ Kundenkarten</button>
     <button type="button" data-page="santa">🎁 Wichteln</button>
@@ -474,16 +500,35 @@ tr[data-status="Versendet"]{background:#f1faf4}
   </section>
 
   <section id="page-rooms" class="page" aria-label="Live-Räume">
+    <div id="roomsStatus" class="connstatus" role="status"></div>
     <div id="roomsNotice" class="notice warn hidden" role="status"></div>
     <div class="grid">
       <div class="card snowy span4">
         <h2>🎪 Live-Räume</h2>
-        <p class="muted" style="margin:0">Schau, wer gerade da ist, plaudere mit und schick Reaktionen in Echtzeit.</p>
+        <p class="muted" style="margin:0">Wer denselben Raum betritt, ist zusammen: Ihr seht euch, chattet und reagiert in Echtzeit.</p>
+        <div class="roomactions">
+          <button class="btn green small" type="button" id="createRoomBtn" aria-expanded="false" aria-controls="createRoomForm">➕ Raum erstellen</button>
+          <button class="btn light small" type="button" id="joinCodeBtn" aria-expanded="false" aria-controls="joinCodeForm">🔑 Mit Code beitreten</button>
+        </div>
+        <form id="createRoomForm" class="miniform hidden" novalidate>
+          <label for="newRoomName">Name des neuen Raums</label>
+          <div class="row"><input id="newRoomName" class="input" maxlength="40" placeholder="z. B. Team Bern" autocomplete="off"><button class="btn small" type="submit" id="createRoomSubmit">Erstellen</button></div>
+          <p class="hint" style="margin:6px 0 0">Du bekommst einen Code und einen Link zum Teilen.</p>
+          <p class="err" id="createRoomError" role="alert"></p>
+        </form>
+        <form id="joinCodeForm" class="miniform hidden" novalidate>
+          <label for="joinCodeInput">Code oder Einladungslink</label>
+          <div class="row"><input id="joinCodeInput" class="input codeinput" maxlength="300" placeholder="z. B. K7M4QX" autocomplete="off" autocapitalize="characters" spellcheck="false"><button class="btn small" type="submit" id="joinCodeSubmit">Beitreten</button></div>
+          <p class="err" id="joinCodeError" role="alert"></p>
+        </form>
+        <h3 class="roomsec">Offene Räume fürs ganze Team</h3>
         <div id="roomList" class="roomlist"></div>
+        <h3 class="roomsec">Eigene Räume</h3>
+        <div id="customRoomList" class="roomlist"></div>
         <p class="lobby" id="lobbyText"></p>
       </div>
       <div class="card span8 roomstage" id="roomStage">
-        <div id="roomEmpty" class="empty" style="margin:22px">👈 Wähle einen Raum, um einzutreten. Die anderen sehen dann, dass du da bist.</div>
+        <div id="roomEmpty" class="empty" style="margin:22px">👈 Wähle einen Raum, erstelle einen eigenen oder tritt mit einem Code bei. Die anderen sehen dann, dass du da bist.</div>
         <div id="roomActive" class="hidden">
           <div class="roomhead roomscene" id="roomHead">
             <span class="glow" id="roomGlow" aria-hidden="true"></span>
@@ -491,7 +536,12 @@ tr[data-status="Versendet"]{background:#f1faf4}
               <div><h2 id="roomTitle"></h2><p id="roomDesc"></p></div>
               <button class="btn small ghost" type="button" id="leaveRoomBtn">🚪 Raum verlassen</button>
             </div>
-            <div id="roomPeople" class="people" aria-label="Im Raum"></div>
+            <div class="roomshare" id="roomShare">
+              <span class="codechip hidden" id="roomCodeChip">Code <b id="roomCode"></b></span>
+              <button class="btn small ghost hidden" type="button" id="copyCodeBtn">📋 Code kopieren</button>
+              <button class="btn small ghost" type="button" id="copyLinkBtn">🔗 Einladungslink kopieren</button>
+            </div>
+            <div id="roomPeople" class="people" role="group" aria-label="Im Raum"></div>
           </div>
           <div class="chatwrap">
             <div id="chatLog" class="chatlog" role="log" aria-label="Chat-Verlauf" tabindex="0"></div>
@@ -619,21 +669,37 @@ tr[data-status="Versendet"]{background:#f1faf4}
         <h3>🩺 Diagnose</h3>
         <ul class="diag" id="diagList"></ul>
       </div>
+      <div class="card span12" id="connectCard">
+        <h3>🔌 Firebase verbinden</h3>
+        <p id="connectStatus" class="notice"></p>
+        <ol class="rules">
+          <li>In der <b>Firebase-Konsole</b>: Projekteinstellungen (Zahnrad) → <b>Allgemein</b> → «Meine Apps» → deine Web-App → «SDK-Einrichtung und Konfiguration» → <b>Konfiguration</b>. Den ganzen Block <code>const firebaseConfig = { … }</code> kopieren.</li>
+          <li>Hier einfügen. Die App liest die Werte heraus.</li>
+          <li><b>firebase-config.js herunterladen</b> und im GitHub-Repository <b>neben die index.html</b> hochladen. Das ist nur einmal nötig: Bei späteren Updates ersetzt du nur noch die index.html.</li>
+        </ol>
+        <div class="field"><label for="fbPaste">Firebase-Konfiguration einfügen</label><textarea id="fbPaste" spellcheck="false" style="min-height:120px;font-family:Consolas,monospace;font-size:12px" placeholder="const firebaseConfig = {&#10;  apiKey: &quot;AIza…&quot;,&#10;  authDomain: &quot;…firebaseapp.com&quot;,&#10;  projectId: &quot;…&quot;,&#10;  appId: &quot;1:…:web:…&quot;&#10;};"></textarea></div>
+        <p class="err" id="fbPasteError" role="alert"></p>
+        <pre id="fbConfigPreview" class="hidden" style="white-space:pre-wrap;overflow-wrap:anywhere;background:#f5f5f5;border:1px solid #e3d6bb;border-radius:10px;padding:10px;font-size:12px;margin:0 0 12px"></pre>
+        <div class="row">
+          <button class="btn green" type="button" id="fbDownloadBtn" disabled>⬇️ firebase-config.js herunterladen</button>
+          <button class="btn light" type="button" id="fbCopyBtn" disabled>📋 Inhalt kopieren</button>
+        </div>
+        <p class="hint">Die Firebase-Werte sind öffentliche Kennungen, keine Geheimnisse. Die Daten werden durch die Firestore-Regeln geschützt. Werte, die direkt in der index.html bei <code>firebaseConfig</code> stehen, haben Vorrang.</p>
+      </div>
       <div class="card span12" id="publishCard">
-        <h3>🚀 Fürs Team veröffentlichen – nur diese eine Datei</h3>
-        <div class="notice"><b>Neu in Version 0.4.0: Live-Räume.</b> Die Firestore-Regeln haben dafür neue Abschnitte (<code>presence</code> und <code>rooms</code>). Nach dem Hochladen der neuen Datei die Regeln unten kopieren und in Firebase veröffentlichen (Schritt 3), sonst bleiben die Räume gesperrt.</div>
+        <h3>🚀 Fürs Team veröffentlichen</h3>
+        <div class="notice"><b>Neu in Version 0.5.0: Eigene Räume mit Code.</b> Die Firestore-Regeln haben dafür einen neuen Abschnitt (<code>rooms/{code}</code>). Nach dem Hochladen der neuen index.html die Regeln unten kopieren und in Firebase veröffentlichen (Schritt 3), sonst lassen sich keine eigenen Räume erstellen.</div>
         <ol class="rules">
           <li><b>Firebase-Projekt</b> anlegen (console.firebase.google.com). <b>Authentication → E-Mail/Passwort</b> aktivieren. <b>Firestore Database</b> erstellen (Standort z. B. europe-west6 Zürich).</li>
-          <li><b>Projekteinstellungen → Allgemein → Web-App hinzufügen</b>. Die Werte <code>apiKey</code>, <code>authDomain</code>, <code>projectId</code> und <code>appId</code> in dieser Datei bei <code>firebaseConfig</code> eintragen (Datei im Editor öffnen, nach «firebaseConfig» suchen).</li>
+          <li><b>Projekteinstellungen → Allgemein → Web-App hinzufügen</b>. Dann oben bei «Firebase verbinden» die Konfiguration einfügen und <code>firebase-config.js</code> herunterladen.</li>
           <li><b>Firestore → Regeln</b>: die Regeln unten kopieren, einfügen und <b>Veröffentlichen</b> klicken.</li>
-          <li><b>GitHub</b>: neues Repository → «Add file → Upload files» → diese Datei als <code>index.html</code> hochladen → <b>Settings → Pages</b> → Branch <code>main</code>, Ordner <code>/ (root)</code> → Save. Die URL lautet <code>https://&lt;konto&gt;.github.io/&lt;repo&gt;/</code>.</li>
+          <li><b>GitHub</b>: Repository → «Add file → Upload files» → <code>index.html</code> und <code>firebase-config.js</code> hochladen → <b>Settings → Pages</b> → Branch <code>main</code>, Ordner <code>/ (root)</code> → Save. Die URL lautet <code>https://&lt;konto&gt;.github.io/&lt;repo&gt;/</code>.</li>
           <li><b>Firebase → Authentication → Einstellungen → Autorisierte Domains</b>: <code>&lt;konto&gt;.github.io</code> hinzufügen.</li>
-          <li>App öffnen, registrieren, E-Mail bestätigen. In Firestore die Sammlung <code>admins</code> anlegen: Dokument-ID = eigene E-Mail in Kleinbuchstaben, Feld z. B. <code>role: "admin"</code>. Neu anmelden – jetzt ist die Organisation fürs Wichteln sichtbar.</li>
-          <li>Updates: Im Repository die bestehende <code>index.html</code> durch die neue Datei ersetzen. Der Name muss exakt <code>index.html</code> lauten (nicht «index (6).html»), sonst bleibt die alte Version online. Nach etwa einer Minute ist sie live, offene Browser zeigen dann einen Hinweis zum Neuladen. Die eigenen Firebase-Werte bei <code>firebaseConfig</code> vorher in die neue Datei übernehmen.</li>
+          <li>App über die GitHub-Adresse öffnen (nicht als Datei vom Computer), registrieren, E-Mail bestätigen. Unten muss «· Firebase» stehen. In Firestore die Sammlung <code>admins</code> anlegen: Dokument-ID = eigene E-Mail in Kleinbuchstaben, Feld z. B. <code>role: "admin"</code>. Neu anmelden.</li>
+          <li>Updates: Im Repository nur die <code>index.html</code> durch die neue Datei ersetzen. Der Name muss exakt <code>index.html</code> lauten. Die <code>firebase-config.js</code> bleibt, wie sie ist. Offene Browser zeigen nach etwa einer Minute einen Hinweis zum Neuladen.</li>
         </ol>
         <div class="field"><label for="rulesText">Firestore-Regeln</label><textarea id="rulesText" readonly spellcheck="false" style="min-height:220px;font-family:Consolas,monospace;font-size:12px"></textarea></div>
         <button class="btn green" type="button" id="copyRulesBtn">📋 Regeln kopieren</button>
-        <p class="hint">Die Firebase-Werte in der Datei sind öffentliche Kennungen, keine Geheimnisse. Die Daten werden durch die Regeln geschützt.</p>
       </div>
       <div class="card span6" id="localTools">
         <h3>Lokale Daten</h3>
@@ -728,6 +794,19 @@ service cloud.firestore {
         && request.resource.data.online is bool
         && request.resource.data.lastSeen == request.time;
       allow delete: if signedIn() && (request.auth.uid == uid || isAdmin());
+    }
+    // Eigene Räume: Wer den Code kennt, kann beitreten. Liste aller Räume gibt es nicht.
+    match /rooms/{roomId} {
+      allow get: if signedIn();
+      allow list, update: if false;
+      allow create: if signedIn() && roomId.matches('[a-z2-9]{6}')
+        && request.resource.data.keys().hasOnly(['name', 'icon', 'createdBy', 'createdByName', 'createdAt'])
+        && str(request.resource.data.name, 40) && request.resource.data.name.size() > 0
+        && str(request.resource.data.icon, 8)
+        && request.resource.data.createdBy == request.auth.uid
+        && str(request.resource.data.createdByName, 40)
+        && request.resource.data.createdAt == request.time;
+      allow delete: if signedIn() && (resource.data.createdBy == request.auth.uid || isAdmin());
     }
     match /rooms/{roomId}/messages/{msgId} {
       allow read: if signedIn();
@@ -1087,10 +1166,10 @@ const WZCore = (function () {
     return 'offline';
   }
 
-  /** Groups online people by room. Unknown rooms count as lobby. */
+  /** Groups online people by room: fixed rooms, custom (code) rooms and lobby. */
   function occupancy(presence, serverNow, cfg, roomIds) {
     const rooms = {}; (roomIds || []).forEach(r => { rooms[r] = []; });
-    const lobby = [], online = [], seen = new Set();
+    const custom = {}, lobby = [], online = [], seen = new Set();
     (presence || []).forEach(p => {
       if (!p || !p.uid || seen.has(p.uid) || !clean(p.nickname)) return;
       const status = presenceStatus(p, serverNow, cfg);
@@ -1098,12 +1177,50 @@ const WZCore = (function () {
       seen.add(p.uid);
       const e = { uid: p.uid, nickname: clean(p.nickname, 40), room: isRoomId(p.room) ? p.room : '', status };
       online.push(e);
-      if (e.room && rooms[e.room]) rooms[e.room].push(e); else lobby.push(e);
+      if (e.room && rooms[e.room]) rooms[e.room].push(e);
+      else if (e.room) (custom[e.room] = custom[e.room] || []).push(e);
+      else lobby.push(e);
     });
     const order = (a, b) => (a.status === b.status ? 0 : a.status === 'active' ? -1 : 1) || a.nickname.localeCompare(b.nickname, 'de');
     Object.keys(rooms).forEach(k => rooms[k].sort(order));
+    Object.keys(custom).forEach(k => custom[k].sort(order));
     lobby.sort(order); online.sort(order);
-    return { rooms, lobby, online };
+    return { rooms, custom, lobby, online };
+  }
+
+  const CODE_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789';
+  function isRoomCode(id) { return typeof id === 'string' && /^[a-z2-9]{6}$/.test(id); }
+  /** 6-character room code without easily confused characters (i, l, o, 0, 1). */
+  function makeRoomCode(rnd) {
+    let out = '';
+    for (let i = 0; i < 6; i++) out += CODE_ALPHABET[Math.floor((rnd ? rnd() : Math.random()) * CODE_ALPHABET.length) % CODE_ALPHABET.length];
+    return out;
+  }
+  /** Accepts a code («K7M 4QX»), a room id or a full invite link and returns the room id ('' if invalid). */
+  function parseRoomInput(v) {
+    let x = String(v == null ? '' : v).trim();
+    const m = /[#&?]raum=([A-Za-z0-9-]+)/.exec(x);
+    if (m) x = m[1];
+    x = x.toLowerCase().replace(/[\s_]/g, '');
+    if (isRoomCode(x.replace(/-/g, ''))) return x.replace(/-/g, '');
+    return isRoomId(x) ? x : '';
+  }
+  const FB_KEYS = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId'];
+  /** Reads the firebaseConfig values from the snippet the Firebase console shows (JS or JSON). */
+  function parseFirebaseConfig(text) {
+    const t = String(text || ''), cfg = {};
+    FB_KEYS.forEach(k => {
+      const m = new RegExp('["\']?' + k + '["\']?\\s*[:=]\\s*["\'`]([^"\'`\\s]{1,200})["\'`]').exec(t);
+      if (m) cfg[k] = m[1];
+    });
+    const missing = ['apiKey', 'authDomain', 'projectId', 'appId'].filter(k => !cfg[k]);
+    return { config: cfg, missing };
+  }
+  function firebaseConfigFile(cfg, version) {
+    const lines = FB_KEYS.filter(k => cfg[k]).map(k => '  ' + k + ': ' + JSON.stringify(String(cfg[k])));
+    return '// Winterzauber: Firebase-Werte für den Team-Modus (erstellt mit Version ' + (version || '') + ').\n'
+      + '// Öffentliche Kennungen, keine Geheimnisse. Diese Datei liegt neben der index.html und bleibt bei Updates unverändert.\n'
+      + 'window.WZ_FIREBASE_CONFIG = {\n' + lines.join(',\n') + '\n};\n';
   }
 
   function compareVersions(a, b) {
@@ -1125,7 +1242,8 @@ const WZCore = (function () {
     STATUSES, CARD_TEXTS, INSPIRATIONS, QUIZ, CHALLENGES, pad, dateKeyInZone, isDayKey, addDaysKey, calendarDays, isDoorOpenable, daysUntil,
     formatDayKey, monthName, clean, cleanMulti, normalizeStatus, normalizeCustomerRow, dedupeImport, parseCSV, toCSV, progress,
     mulberry32, shuffle, makeDraw, isAllowedEmail, sha256Hex, adventContent, dailyInspiration,
-    isRoomId, cleanMessage, presenceStatus, occupancy, compareVersions, avatarColor, initial
+    isRoomId, cleanMessage, presenceStatus, occupancy, compareVersions, avatarColor, initial,
+    isRoomCode, makeRoomCode, parseRoomInput, parseFirebaseConfig, firebaseConfigFile
   };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = WZCore;
@@ -1135,13 +1253,16 @@ if (typeof module !== 'undefined' && module.exports) module.exports = WZCore;
 'use strict';
 /* ======================= CONFIG ======================= */
 const CONFIG = {
-  version: '0.4.0',
-  // 'auto' = Firebase on *.web.app / *.firebaseapp.com or when firebaseConfig.apiKey is set, otherwise local mode.
+  version: '0.5.0',
+  // 'auto' = Firebase when firebaseConfig.apiKey is set, when firebase-config.js (next to this file) provides values,
+  // or on *.web.app / *.firebaseapp.com. Otherwise local mode.
   mode: 'auto',
   firebaseSdkVersion: '12.19.0',
   // Optional. Leave empty on Firebase Hosting: config is then loaded from /__/firebase/init.json automatically.
-  // >>> FÜR DEN TEAM-BETRIEB HIER EINTRAGEN (Firebase → Projekteinstellungen → Web-App). Leer = lokaler Modus.
+  // Team-Betrieb: am einfachsten über die Datei firebase-config.js (Setup → Firebase verbinden).
+  // Werte hier haben Vorrang. Leer und ohne firebase-config.js = lokaler Modus.
   firebaseConfig: { apiKey: '', authDomain: '', projectId: '', appId: '' },
+  firebaseConfigFile: 'firebase-config.js',
   allowedEmailDomain: 'wavestone.com',
   // Local mode only (NOT real security): SHA-256 of the password "Winterzauber2026".
   localPasswordSha256: '3c52f514e0c57daf997b4936efe076c0510cd8d5007139cdb4e18c9c089f7ff6',
@@ -1235,7 +1356,7 @@ function LocalStore() {
   const LOCAL_USER = { uid: 'local', email: 'lokal@demo', verified: true };
   let authCb = () => {}, sessionOk = Safe.get('wz-session', 'session') === 'ok', fails = 0, lockedUntil = 0;
   const listeners = new Set();
-  const empty = () => ({ schema: 2, profiles: {}, customers: [], santa: { config: { budget: '25 CHF', date: '', drawnAt: null }, assignments: {} }, calendar: {}, presence: {}, rooms: {} });
+  const empty = () => ({ schema: 2, profiles: {}, customers: [], santa: { config: { budget: '25 CHF', date: '', drawnAt: null }, assignments: {} }, calendar: {}, presence: {}, rooms: {}, customRooms: {} });
   const reactionIds = () => CONFIG.reactions.map(r => r.id);
   function cleanMsg(m) { return { id: C.clean(m.id, 60) || newLocalId(), uid: C.clean(m.uid, 60), nickname: C.clean(m.nickname, 40), text: C.cleanMessage(m.text, CONFIG.maxMessageLength), createdAt: typeof m.createdAt === 'number' ? m.createdAt : 0 }; }
   function cleanReact(m) { return { id: C.clean(m.id, 60) || newLocalId(), uid: C.clean(m.uid, 60), nickname: C.clean(m.nickname, 40), kind: m.kind, createdAt: typeof m.createdAt === 'number' ? m.createdAt : 0 }; }
@@ -1252,6 +1373,10 @@ function LocalStore() {
     if (x.presence && typeof x.presence === 'object' && !Array.isArray(x.presence)) Object.keys(x.presence).forEach(uid => {
       const p = x.presence[uid];
       if (p && typeof p === 'object' && C.clean(p.nickname)) d.presence[C.clean(uid, 60)] = { nickname: C.clean(p.nickname, 40), room: C.isRoomId(p.room) ? p.room : '', online: p.online !== false, lastSeen: typeof p.lastSeen === 'number' ? p.lastSeen : 0, bot: p.bot === true };
+    });
+    if (x.customRooms && typeof x.customRooms === 'object' && !Array.isArray(x.customRooms)) Object.keys(x.customRooms).forEach(id => {
+      const m = x.customRooms[id];
+      if (C.isRoomCode(id) && m && typeof m === 'object' && C.clean(m.name)) d.customRooms[id] = { name: C.clean(m.name, 40), icon: C.clean(m.icon, 8) || '🚪', createdBy: C.clean(m.createdBy, 60), createdByName: C.clean(m.createdByName, 40), createdAt: typeof m.createdAt === 'number' ? m.createdAt : 0 };
     });
     if (x.rooms && typeof x.rooms === 'object' && !Array.isArray(x.rooms)) Object.keys(x.rooms).forEach(r => {
       const o = x.rooms[r];
@@ -1345,6 +1470,12 @@ function LocalStore() {
       persist('room:' + roomId);
     }),
     deleteMessage: (roomId, id) => run(() => { const r = room(roomId); r.messages = r.messages.filter(x => x.id !== id); persist('room:' + roomId); }),
+    getRoom: id => Promise.resolve(data.customRooms[id] ? copy(data.customRooms[id]) : null),
+    createRoom: (id, m) => run(() => {
+      if (!C.isRoomCode(id) || data.customRooms[id]) throw new Error('Diesen Code gibt es schon.');
+      data.customRooms[id] = { name: C.clean(m.name, 40), icon: C.clean(m.icon, 8) || '🚪', createdBy: LOCAL_USER.uid, createdByName: C.clean(m.createdByName, 40), createdAt: Date.now() };
+      persist('rooms-meta');
+    }),
     newReactionId: () => newLocalId(),
     sendReaction: (roomId, id, x) => run(() => {
       if (!C.isRoomId(roomId) || !reactionIds().includes(x.kind)) throw new Error('Unbekannte Reaktion.');
@@ -1399,11 +1530,28 @@ async function loadFirebase() {
   const mods = await Promise.race([Promise.all([import(base + 'firebase-app.js'), import(base + 'firebase-auth.js'), import(base + 'firebase-firestore.js')]), timeout]);
   return Object.assign({}, mods[0], mods[1], mods[2]);
 }
+let SIDE_CONFIG = null;
+/** Lädt die optionale Datei firebase-config.js neben der index.html (setzt window.WZ_FIREBASE_CONFIG). */
+function loadSideConfig() {
+  return new Promise(resolve => {
+    if (window.WZ_FIREBASE_CONFIG) return resolve(window.WZ_FIREBASE_CONFIG);
+    if (!CONFIG.firebaseConfigFile) return resolve(null);
+    let done = false;
+    const finish = v => { if (!done) { done = true; resolve(v && v.apiKey && v.projectId ? v : null); } };
+    const el = document.createElement('script');
+    el.src = CONFIG.firebaseConfigFile + (location.protocol === 'file:' ? '' : '?v=' + Date.now());
+    el.onload = () => finish(window.WZ_FIREBASE_CONFIG);
+    el.onerror = () => finish(null);
+    setTimeout(() => finish(window.WZ_FIREBASE_CONFIG), 6000);
+    document.head.appendChild(el);
+  });
+}
 async function firebaseConfig(fb) {
   if (fb && fb.__config) return fb.__config;
   if (CONFIG.firebaseConfig.apiKey) return CONFIG.firebaseConfig;
+  if (SIDE_CONFIG) return SIDE_CONFIG;
   const r = await fetch('/__/firebase/init.json', { cache: 'no-store' });
-  if (!r.ok) throw new Error('Firebase-Konfiguration nicht gefunden. Bitte firebaseConfig in CONFIG eintragen.');
+  if (!r.ok) throw new Error('Firebase-Konfiguration nicht gefunden. Bitte firebase-config.js neben die index.html legen (Setup → Firebase verbinden).');
   return r.json();
 }
 function FirebaseStore(fb, cfg) {
@@ -1454,6 +1602,8 @@ function FirebaseStore(fb, cfg) {
     setPresence: (uid, p) => fb.setDoc(fb.doc(db, 'presence', uid), { nickname: C.clean(p.nickname, 40), room: C.isRoomId(p.room) ? p.room : '', online: p.online !== false, lastSeen: ts() }),
     sendMessage: (roomId, m) => fb.addDoc(roomCol(roomId, 'messages'), { uid: auth.currentUser.uid, nickname: C.clean(m.nickname, 40), text: C.cleanMessage(m.text, CONFIG.maxMessageLength), createdAt: ts() }),
     deleteMessage: (roomId, id) => fb.deleteDoc(fb.doc(db, 'rooms', roomId, 'messages', id)),
+    async getRoom(id) { const snap = await fb.getDoc(fb.doc(db, 'rooms', id)); return snap.exists() ? snap.data() : null; },
+    createRoom: (id, m) => fb.setDoc(fb.doc(db, 'rooms', id), { name: C.clean(m.name, 40), icon: C.clean(m.icon, 8) || '🚪', createdBy: auth.currentUser.uid, createdByName: C.clean(m.createdByName, 40), createdAt: ts() }),
     newReactionId: roomId => fb.doc(roomCol(roomId, 'reactions')).id,
     sendReaction: (roomId, id, x) => fb.setDoc(fb.doc(db, 'rooms', roomId, 'reactions', id), { uid: auth.currentUser.uid, nickname: C.clean(x.nickname, 40), kind: x.kind, createdAt: ts() }),
     saveProfile: (uid, p) => fb.setDoc(fb.doc(db, 'profiles', uid), Object.assign(sanitizeProfile(p, auth.currentUser && auth.currentUser.email), { updatedAt: ts() })),
@@ -1498,7 +1648,8 @@ const S = {
   // Live-Räume
   presence: [], serverOffset: 0, ackWait: false, presenceStarted: false, roomsDenied: false, roomsChecked: false, lastActivity: Date.now(),
   room: '', roomUnsub: null, roomMsgs: [], roomEvents: [], roomLoaded: false, reactLoaded: false, msgIds: new Set(), reactSeen: new Set(),
-  prevRoomPeople: null, unread: 0, forceScroll: false
+  prevRoomPeople: null, unread: 0, forceScroll: false,
+  roomMeta: {}, codeRoomsDenied: false, pendingRoom: '', configSource: ''
 };
 const timers = {};
 let pendingSaves = 0;
@@ -1572,7 +1723,7 @@ function setupLoginUI() {
   $('authTabs').classList.toggle('hidden', !fbMode);
   $('emailField').classList.toggle('hidden', !fbMode);
   $('resetPwBtn').classList.toggle('hidden', !fbMode);
-  $('loginHint').textContent = fbMode ? 'Nur mit ' + (CONFIG.allowedEmailDomain ? '@' + CONFIG.allowedEmailDomain + '-' : '') + 'Adresse. Nach der Registrierung bestätigst du deine E-Mail.' : 'Lokaler Modus: Daten bleiben in diesem Browser.';
+  $('loginHint').textContent = fbMode ? 'Nur mit ' + (CONFIG.allowedEmailDomain ? '@' + CONFIG.allowedEmailDomain + '-' : '') + 'Adresse. Nach der Registrierung bestätigst du deine E-Mail.' : 'Lokaler Modus: Daten bleiben in diesem Browser, andere sehen dich hier nicht. Fürs Team: nach dem Eintreten Setup → «Firebase verbinden».';
   $('tabLogin').onclick = () => setAuthMode('login');
   $('tabRegister').onclick = () => setAuthMode('register');
   let busy = false;
@@ -1618,7 +1769,7 @@ async function signOut() {
 async function onAuthChanged(user) {
   if (S.unsub) { S.unsub(); S.unsub = null; }
   stopRoom(); S.room = '';
-  if (!user || !S.user || S.user.uid !== user.uid) { S.presence = []; S.roomsDenied = false; S.roomsChecked = false; S.serverOffset = 0; S.ackWait = false; }
+  if (!user || !S.user || S.user.uid !== user.uid) { S.presence = []; S.roomsDenied = false; S.codeRoomsDenied = false; S.roomMeta = {}; S.roomsChecked = false; S.serverOffset = 0; S.ackWait = false; }
   S.presenceStarted = false; resetRoomState(); updateUnread();
   S.user = user; S.revealed = false; S.profileDirty = false; S.profilesLoaded = false;
   if (!user) { showView('loginView'); setTimeout(() => { try { (S.mode === 'firebase' ? $('loginEmail') : $('loginPassword')).focus(); } catch (e) { /* ignore */ } }, 50); return; }
@@ -1637,8 +1788,11 @@ async function onAuthChanged(user) {
         // Präsenz starten und nach einem Neuladen in den letzten Raum zurückkehren
         S.presenceStarted = true;
         const last = S.room || Safe.get('wz-room', 'session');
-        if (last && roomById(last) && !S.room) joinRoom(last, true); else presenceTick(true);
-      }
+        if (S.pendingRoom) joinPendingRoom();
+        else if (last && fixedRoom(last) && !S.room) joinRoom(last, true);
+        else if (last && C.isRoomCode(last) && !S.room) enterRoomById(last, true).then(r => { if (r !== true) presenceTick(true); });
+        else presenceTick(true);
+      } else if (me() && S.pendingRoom) joinPendingRoom();
       renderPresence(); renderRoomStage();
     },
     presence: onPresence,
@@ -1958,7 +2112,41 @@ async function saveProfile(e) {
 /* ======================= LIVE-RÄUME ======================= */
 const ROOM_IDS = CONFIG.rooms.map(r => r.id);
 const BASE_TITLE = document.title;
-const roomById = id => CONFIG.rooms.find(r => r.id === id) || null;
+const fixedRoom = id => CONFIG.rooms.find(r => r.id === id) || null;
+const CUSTOM_ICONS = ['🎄', '⛄', '🦌', '🌟', '🔔', '🎅', '❄️', '🕯️', '🎶', '☕'];
+/** Room description for fixed rooms and for own rooms (code). Null if the id is not a room. */
+function roomInfo(id) {
+  const f = fixedRoom(id);
+  if (f) return Object.assign({ custom: false }, f);
+  if (!C.isRoomCode(id)) return null;
+  const m = S.roomMeta[id], code = id.toUpperCase();
+  if (m && typeof m === 'object') return { id, code, custom: true, icon: m.icon || '🚪', name: m.name || ('Raum ' + code), desc: 'Eigener Raum von ' + (m.createdByName || 'unbekannt') };
+  return { id, code, custom: true, icon: '🚪', name: 'Raum ' + code, desc: m === 'missing' ? 'Diesen Raum gibt es nicht mehr.' : 'Eigener Raum', missing: m === 'missing' };
+}
+const peopleIn = (o, id) => (o.rooms[id] || o.custom[id] || []);
+const recentKey = () => 'wz-rooms:' + (S.user ? S.user.uid : '');
+function recentRooms() { try { const a = JSON.parse(Safe.get(recentKey()) || '[]'); return Array.isArray(a) ? a.filter(C.isRoomCode).slice(0, 8) : []; } catch (e) { return []; } }
+function rememberRoom(id) { if (!C.isRoomCode(id)) return; Safe.set(recentKey(), JSON.stringify([id].concat(recentRooms().filter(x => x !== id)).slice(0, 8))); }
+const roomMetaWaiters = {};
+/** Loads name and icon of an own room once (null = gibt es nicht). */
+function fetchRoomMeta(id) {
+  if (!C.isRoomCode(id) || !S.store || !S.store.getRoom) return Promise.resolve(null);
+  const cur = S.roomMeta[id];
+  if (cur && typeof cur === 'object') return Promise.resolve(cur);
+  if (cur === 'missing') return Promise.resolve(null);
+  if (roomMetaWaiters[id]) return roomMetaWaiters[id];
+  S.roomMeta[id] = 'loading';
+  roomMetaWaiters[id] = Promise.resolve().then(() => S.store.getRoom(id)).then(m => {
+    S.roomMeta[id] = m || 'missing'; delete roomMetaWaiters[id];
+    renderPresence(); if (S.room === id) renderRoomStage();
+    return m || null;
+  }, e => { delete S.roomMeta[id]; delete roomMetaWaiters[id]; throw e; });
+  return roomMetaWaiters[id];
+}
+function codeRoomsError(e) {
+  if (S.mode === 'firebase' && isDenied(e)) { if (!S.codeRoomsDenied) { S.codeRoomsDenied = true; renderRoomStage(); renderSetup(); } return true; }
+  return false;
+}
 const reactionById = id => CONFIG.reactions.find(r => r.id === id) || null;
 const serverNow = () => Date.now() + S.serverOffset;
 const isMe = uid => !!(S.user && uid === S.user.uid);
@@ -2010,7 +2198,7 @@ function onPresence(list) {
 }
 function trackRoomArrivals() {
   if (!S.room) { S.prevRoomPeople = null; return; }
-  const now = new Map((occ().rooms[S.room] || []).map(p => [p.uid, p.nickname]));
+  const now = new Map(peopleIn(occ(), S.room).map(p => [p.uid, p.nickname]));
   const prev = S.prevRoomPeople;
   S.prevRoomPeople = now;
   if (!prev) return;
@@ -2031,12 +2219,13 @@ function resetRoomState() {
   const layer = $('reactLayer'); if (layer) layer.replaceChildren();
 }
 function joinRoom(id, quiet) {
-  if (!roomById(id)) return;
+  if (!roomInfo(id)) return;
   if (!roomsAvailable()) { if (!quiet) toast('🔒 Die Live-Räume sind noch nicht freigeschaltet.'); renderRoomStage(); return; }
   if (!me()) { if (!quiet) { toast('Bitte zuerst dein Profil erstellen.'); nav('profile'); } return; }
   if (S.room === id) { if (!quiet) { nav('rooms'); focusChat(); } return; }
   stopRoom();
   S.room = id; Safe.set('wz-room', id, 'session');
+  if (C.isRoomCode(id)) { rememberRoom(id); fetchRoomMeta(id).catch(e => { if (!codeRoomsError(e)) toast('⚠️ ' + errMsg(e)); }); }
   resetRoomState();
   const rid = id;
   try {
@@ -2124,6 +2313,7 @@ function updateUnread() {
   const b = $('roomBadge');
   b.textContent = S.unread > 99 ? '99+' : String(S.unread);
   b.classList.toggle('hidden', !S.unread);
+  if (S.unread) $('navRooms').setAttribute('aria-label', 'Live-Räume, ' + S.unread + ' ungelesen'); else $('navRooms').removeAttribute('aria-label');
   document.title = (S.unread ? '(' + S.unread + ') ' : '') + BASE_TITLE;
 }
 
@@ -2140,10 +2330,10 @@ function faces(list, max) {
 const youSuffix = p => isMe(p.uid) ? ' (du)' : '';
 function renderPresence() {
   if (!S.user) return;
-  renderOnlinePill(); renderHomeRooms(); renderRoomList(); renderRoomPeople();
+  renderOnlinePill(); renderHomeRooms(); renderRoomList(); renderCustomRoomList(); renderRoomPeople(); renderRoomsStatus();
 }
 function renderOnlinePill() {
-  const show = roomsAvailable() && !!me();
+  const show = roomsAvailable() && !!me() && S.mode !== 'local';
   $('onlinePill').classList.toggle('hidden', !show);
   if (show) $('onlineText').textContent = occ().online.length + ' online';
 }
@@ -2152,53 +2342,198 @@ function renderHomeRooms() {
   if (!roomsAvailable()) { $('homeOnlineCount').textContent = '–'; box.replaceChildren(h('p', { class: 'muted', text: S.roomsDenied ? '🔒 Live-Räume noch nicht freigeschaltet.' : 'Live-Räume sind nicht verfügbar.' })); return; }
   const o = occ();
   $('homeOnlineCount').textContent = o.online.length + ' online';
-  box.replaceChildren(...CONFIG.rooms.map(r => {
-    const ppl = o.rooms[r.id] || [];
-    const names = ppl.slice(0, 3).map(p => p.nickname + youSuffix(p)).join(', ') + (ppl.length > 3 ? ' +' + (ppl.length - 3) : '');
-    return h('div', { class: 'hr' }, h('span', { text: r.icon + ' ' + r.name }), h('span', { class: 'muted', text: names || '–' }));
-  }));
+  const names = ppl => ppl.slice(0, 3).map(p => p.nickname + youSuffix(p)).join(', ') + (ppl.length > 3 ? ' +' + (ppl.length - 3) : '');
+  const rows = CONFIG.rooms.map(r => h('div', { class: 'hr' }, h('span', { text: r.icon + ' ' + r.name }), h('span', { class: 'muted', text: names(o.rooms[r.id] || []) || '–' })));
+  const known = new Set(recentRooms().concat(S.room && C.isRoomCode(S.room) ? [S.room] : []));
+  const elsewhere = [];
+  Object.keys(o.custom).forEach(id => {
+    const info = roomInfo(id);
+    if (known.has(id) && info) rows.push(h('div', { class: 'hr' }, h('span', { text: info.icon + ' ' + info.name }), h('span', { class: 'muted', text: names(o.custom[id]) })));
+    else elsewhere.push(...o.custom[id]);
+  });
+  if (elsewhere.length) rows.push(h('div', { class: 'hr' }, h('span', { text: '🔐 In anderen eigenen Räumen' }), h('span', { class: 'muted', text: names(elsewhere) })));
+  box.replaceChildren(...rows);
+}
+function roomCard(r, ppl, avail) {
+  const here = S.room === r.id;
+  return h('button', {
+    type: 'button', class: 'roomcard roomscene ' + (r.custom ? 'scene-custom' : 'scene-' + r.id) + (here ? ' here' : ''), 'data-room': r.id, disabled: !avail,
+    'aria-pressed': here ? 'true' : 'false', 'aria-label': r.name + (r.custom ? ', Code ' + r.code : '') + ', ' + (ppl.length === 1 ? '1 Person' : ppl.length + ' Personen') + (here ? ', du bist hier' : ', betreten'),
+    onclick: () => joinRoom(r.id)
+  },
+    h('span', { class: 'rc-top' }, h('span', { class: 'rc-icon', 'aria-hidden': 'true', text: r.icon }),
+      h('span', { class: 'rc-name' }, r.name, r.custom ? h('span', { class: 'rc-code', text: r.code }) : null),
+      h('span', { class: 'rc-count', text: here ? '⭐ Du bist hier' : ppl.length ? ppl.length + ' da' : 'leer' })),
+    h('span', { class: 'rc-desc', text: r.desc }),
+    h('span', { class: 'faces', 'aria-hidden': 'true' }, ...faces(ppl, 7)));
+}
+function keepFocus(box, fn) {
+  const ae = document.activeElement, focusRoom = ae && ae.closest && ae.closest('#' + box) ? ae.getAttribute('data-room') : null;
+  fn();
+  // Tastaturfokus bleibt beim Aktualisieren (jede Minute) auf derselben Raumkarte
+  if (focusRoom) { const el = $(box).querySelector('[data-room="' + focusRoom + '"]'); if (el) el.focus({ preventScroll: true }); }
 }
 function renderRoomList() {
   const o = occ(), avail = roomsAvailable();
-  $('roomList').replaceChildren(...CONFIG.rooms.map(r => {
-    const ppl = o.rooms[r.id] || [], here = S.room === r.id;
-    return h('button', {
-      type: 'button', class: 'roomcard roomscene scene-' + r.id + (here ? ' here' : ''), 'data-room': r.id, disabled: !avail,
-      'aria-pressed': here ? 'true' : 'false', 'aria-label': r.name + ', ' + (ppl.length === 1 ? '1 Person' : ppl.length + ' Personen') + (here ? ', du bist hier' : ', betreten'),
-      onclick: () => joinRoom(r.id)
-    },
-      h('span', { class: 'rc-top' }, h('span', { class: 'rc-icon', 'aria-hidden': 'true', text: r.icon }), h('span', { class: 'rc-name', text: r.name }),
-        h('span', { class: 'rc-count', text: here ? '⭐ Du bist hier' : ppl.length ? ppl.length + ' da' : 'leer' })),
-      h('span', { class: 'rc-desc', text: r.desc }),
-      h('span', { class: 'faces', 'aria-hidden': 'true' }, ...faces(ppl, 7)));
-  }));
-  $('lobbyText').textContent = avail && o.lobby.length ? '🛋️ Online, aber in keinem Raum: ' + o.lobby.map(p => p.nickname + youSuffix(p) + (p.status === 'away' ? ' 💤' : '')).join(', ') : '';
+  keepFocus('roomList', () => $('roomList').replaceChildren(...CONFIG.rooms.map(r => roomCard(Object.assign({ custom: false }, r), o.rooms[r.id] || [], avail))));
+  const known = new Set(recentRooms().concat(S.room && C.isRoomCode(S.room) ? [S.room] : []));
+  const elsewhere = [];
+  Object.keys(o.custom).forEach(id => { if (!known.has(id)) elsewhere.push(...o.custom[id]); });
+  const parts = [];
+  if (avail && o.lobby.length) parts.push('🛋️ Online, aber in keinem Raum: ' + o.lobby.map(p => p.nickname + youSuffix(p) + (p.status === 'away' ? ' 💤' : '')).join(', '));
+  if (avail && elsewhere.length) parts.push('🔐 In anderen eigenen Räumen: ' + elsewhere.map(p => p.nickname).join(', '));
+  $('lobbyText').textContent = parts.join(' · ');
+}
+function renderCustomRoomList() {
+  const o = occ(), avail = roomsAvailable() && !S.codeRoomsDenied;
+  const ids = recentRooms();
+  if (S.room && C.isRoomCode(S.room) && !ids.includes(S.room)) ids.unshift(S.room);
+  ids.forEach(id => { if (!S.roomMeta[id]) fetchRoomMeta(id).catch(e => codeRoomsError(e)); });
+  const cards = ids.map(roomInfo).filter(r => r && !r.missing).map(r => roomCard(r, peopleIn(o, r.id), avail));
+  keepFocus('customRoomList', () => $('customRoomList').replaceChildren(...(cards.length ? cards
+    : [h('p', { class: 'emptyhint', text: 'Noch keine eigenen Räume. Erstelle einen und teile den Code, oder tritt mit einem Code bei.' })])));
+  ['createRoomBtn', 'joinCodeBtn'].forEach(b => { $(b).disabled = !avail; });
+}
+function renderRoomsStatus() {
+  const box = $('roomsStatus');
+  if (!S.user) return;
+  const n = occ().online.length;
+  let bad = false, icon, title, meta, tip, action = null;
+  if (S.mode === 'local') {
+    bad = true; icon = '🔴'; title = 'Lokaler Modus: Hier bist du allein.';
+    meta = 'Die App speichert gerade nur in diesem Browser. Andere sehen dich nicht, egal welchen Raum oder Code ihr nehmt.';
+    tip = 'Damit Räume gemeinsam funktionieren, braucht die App die Firebase-Werte (Setup → «Firebase verbinden»). Danach öffnen alle die App über dieselbe Internet-Adresse, nicht als Datei vom Computer.';
+    action = h('button', { type: 'button', class: 'btn small', 'data-goto': 'setup', text: '⚙️ Zum Setup' });
+  } else if (S.roomsDenied) {
+    bad = true; icon = '🔒'; title = 'Verbunden, aber die Räume sind noch gesperrt.';
+    meta = 'Die Firestore-Regeln sind noch auf dem alten Stand.';
+    tip = S.isAdmin ? 'Setup öffnen, «Regeln kopieren», in der Firebase-Konsole unter Firestore → Regeln einfügen und veröffentlichen. Danach die Seite neu laden.' : 'Bitte gib der Person Bescheid, die die App betreut.';
+    if (S.isAdmin) action = h('button', { type: 'button', class: 'btn small', 'data-goto': 'setup', text: '⚙️ Zum Setup' });
+  } else {
+    icon = '🟢'; title = 'Verbunden mit dem Team';
+    meta = (S.fbProject ? 'Projekt «' + S.fbProject + '» · ' : '') + 'angemeldet als ' + (S.user.email || '') + ' · ' + n + ' online';
+    tip = n <= 1 ? 'Gerade bist nur du online. Zum Testen: Mit demselben Konto in zwei Browsern bist du für die App eine einzige Person. Nimm ein zweites Konto oder bitte jemanden aus dem Team dazu.'
+      : 'Alle, die denselben Raum betreten oder deinem Code folgen, sind mit dir zusammen.';
+  }
+  box.className = 'connstatus' + (bad ? ' bad' : '');
+  box.replaceChildren(h('span', { class: 'cs-icon', 'aria-hidden': 'true', text: icon }),
+    h('div', { class: 'cs-body' }, h('div', { class: 'cs-title', text: title }), h('div', { class: 'cs-meta', text: meta }), h('div', { class: 'cs-tip', text: tip })), ...(action ? [action] : []));
+  $('localPill').classList.toggle('hidden', S.mode !== 'local');
 }
 function renderRoomPeople() {
-  const ppl = S.room ? (occ().rooms[S.room] || []) : [];
+  const ppl = S.room ? peopleIn(occ(), S.room) : [];
   $('roomPeople').replaceChildren(...ppl.map(p => h('span', { class: 'person' }, face(p), p.nickname + youSuffix(p) + (p.status === 'away' ? ' 💤' : ''))));
 }
 function renderRoomStage() {
   const notice = $('roomsNotice');
-  if (S.roomsDenied) {
-    notice.replaceChildren(h('b', { text: '🔒 Die Live-Räume sind noch gesperrt. ' }), S.isAdmin
-      ? 'Die Firestore-Regeln sind noch auf dem alten Stand. Öffne «⚙️ Setup», kopiere die Regeln und veröffentliche sie in der Firebase-Konsole unter Firestore → Regeln. Danach diese Seite neu laden.'
-      : 'Die Firestore-Regeln müssen noch aktualisiert werden. Bitte gib der Person Bescheid, die die App betreut.');
+  renderRoomsStatus();
+  if (S.roomsDenied) notice.classList.add('hidden');
+  else if (S.codeRoomsDenied) {
+    notice.replaceChildren(h('b', { text: '🔒 Eigene Räume sind noch gesperrt. ' }), S.isAdmin
+      ? 'Die offenen Räume funktionieren. Für Räume mit Code braucht es die neuen Firestore-Regeln: Setup → «Regeln kopieren» → in Firebase veröffentlichen → neu laden.'
+      : 'Die offenen Räume funktionieren. Für Räume mit Code müssen die Firestore-Regeln aktualisiert werden.');
     notice.classList.remove('hidden');
   } else if (S.profilesLoaded && !me()) {
     notice.replaceChildren('👋 Bitte ', h('button', { type: 'button', class: 'linkbtn', 'data-goto': 'profile', text: 'erstelle zuerst dein Profil' }), ', damit die anderen sehen, wer da ist.');
     notice.classList.remove('hidden');
   } else notice.classList.add('hidden');
-  const r = S.room ? roomById(S.room) : null;
+  const r = S.room ? roomInfo(S.room) : null;
   $('roomEmpty').classList.toggle('hidden', !!r);
   $('roomActive').classList.toggle('hidden', !r);
   $('page-rooms').classList.toggle('inroom', !!r);
   if (!r) return;
-  $('roomHead').className = 'roomhead roomscene scene-' + r.id;
+  $('roomHead').className = 'roomhead roomscene ' + (r.custom ? 'scene-custom' : 'scene-' + r.id);
   $('roomGlow').textContent = r.icon;
   $('roomTitle').textContent = r.icon + ' ' + r.name;
   $('roomDesc').textContent = r.desc;
+  $('roomCode').textContent = r.custom ? r.code : '';
+  $('roomCodeChip').classList.toggle('hidden', !r.custom);
+  $('copyCodeBtn').classList.toggle('hidden', !r.custom);
   renderRoomPeople(); renderChat();
+}
+
+/* --- Eigene Räume: erstellen, mit Code beitreten, einladen --- */
+function randomUnit() { try { return crypto.getRandomValues(new Uint32Array(1))[0] / 4294967296; } catch (e) { return Math.random(); } }
+function inviteLink(id) { const r = roomInfo(id); return location.origin + location.pathname + location.search + '#raum=' + (r && r.custom ? r.code : id); }
+async function copyText(text, okMsg) {
+  try { await navigator.clipboard.writeText(text); toast(okMsg); }
+  catch (e) { window.prompt('Zum Kopieren markieren und mit Ctrl+C kopieren:', text); }
+}
+function copyInvite() {
+  if (!S.room) return;
+  const local = S.mode === 'local' || location.protocol === 'file:';
+  copyText(inviteLink(S.room), local ? '🔗 Link kopiert. Achtung: Im lokalen Modus kommt niemand sonst in diesen Raum.' : '🔗 Einladungslink kopiert. Wer ihn öffnet, landet direkt in diesem Raum.');
+}
+function toggleMiniForm(which) {
+  const pairs = { create: ['createRoomForm', 'createRoomBtn', 'newRoomName'], join: ['joinCodeForm', 'joinCodeBtn', 'joinCodeInput'] };
+  Object.keys(pairs).forEach(k => {
+    const [form, btn, input] = pairs[k], open = k === which && $(form).classList.contains('hidden');
+    $(form).classList.toggle('hidden', !open); $(btn).setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) setTimeout(() => { try { $(input).focus(); } catch (e) { /* ignore */ } }, 30);
+  });
+  $('createRoomError').textContent = ''; $('joinCodeError').textContent = '';
+}
+let roomFormBusy = false;
+async function createRoom(e) {
+  e.preventDefault();
+  if (roomFormBusy) return;
+  const out = $('createRoomError'); out.textContent = '';
+  const name = C.clean($('newRoomName').value, 40);
+  if (!name) { out.textContent = 'Bitte einen Namen eingeben.'; return; }
+  if (!me()) { nav('profile'); toast('Bitte zuerst dein Profil erstellen.'); return; }
+  if (!roomsAvailable() || S.codeRoomsDenied) { out.textContent = 'Eigene Räume sind gerade nicht verfügbar.'; return; }
+  roomFormBusy = true; $('createRoomSubmit').disabled = true;
+  try {
+    let code = '';
+    for (let i = 0; i < 6 && !code; i++) {
+      const c = C.makeRoomCode(randomUnit);
+      if (!fixedRoom(c) && !(await S.store.getRoom(c))) code = c;
+    }
+    if (!code) throw new Error('Kein freier Code gefunden. Bitte nochmals versuchen.');
+    const meta = { name, icon: CUSTOM_ICONS[Math.floor(randomUnit() * CUSTOM_ICONS.length)], createdByName: myNick() };
+    await S.store.createRoom(code, meta);
+    S.roomMeta[code] = Object.assign({ createdBy: S.user.uid }, meta);
+    rememberRoom(code);
+    $('newRoomName').value = ''; toggleMiniForm(null);
+    joinRoom(code);
+    toast('✨ Raum «' + name + '» erstellt. Code ' + code.toUpperCase() + ': Teile ihn oder den Einladungslink.');
+  } catch (err) {
+    if (codeRoomsError(err)) out.textContent = 'Eigene Räume brauchen die neuen Firestore-Regeln (Setup).';
+    else out.textContent = errMsg(err);
+  } finally { roomFormBusy = false; $('createRoomSubmit').disabled = false; }
+}
+/** Betritt einen offenen Raum oder einen eigenen Raum per Code. Gibt true oder eine Fehlermeldung zurück. */
+async function enterRoomById(id, quiet) {
+  if (fixedRoom(id)) { joinRoom(id, quiet); return true; }
+  if (!C.isRoomCode(id)) return 'Das ist kein gültiger Code. Ein Code hat 6 Zeichen, zum Beispiel K7M4QX.';
+  if (!me()) { S.pendingRoom = id; nav('profile'); return 'Bitte zuerst dein Profil erstellen.'; }
+  let meta;
+  try { meta = await fetchRoomMeta(id); }
+  catch (e) { return codeRoomsError(e) ? 'Eigene Räume brauchen die neuen Firestore-Regeln (Setup).' : errMsg(e); }
+  if (!meta) return 'Den Code ' + id.toUpperCase() + ' gibt es nicht. Bitte prüfen.' + (S.mode === 'local' ? ' Im lokalen Modus gibt es nur Räume aus diesem Browser.' : '');
+  joinRoom(id, quiet);
+  return true;
+}
+async function joinByCode(e) {
+  e.preventDefault();
+  if (roomFormBusy) return;
+  const out = $('joinCodeError'); out.textContent = '';
+  const id = C.parseRoomInput($('joinCodeInput').value);
+  if (!id) { out.textContent = 'Das ist kein gültiger Code. Ein Code hat 6 Zeichen, zum Beispiel K7M4QX.'; return; }
+  roomFormBusy = true; $('joinCodeSubmit').disabled = true;
+  try {
+    const res = await enterRoomById(id, false);
+    if (res === true) { $('joinCodeInput').value = ''; toggleMiniForm(null); } else out.textContent = res;
+  } finally { roomFormBusy = false; $('joinCodeSubmit').disabled = false; }
+}
+function roomFromHash() { const m = /[#&]raum=([A-Za-z0-9-]+)/.exec(location.hash || ''); return m ? C.parseRoomInput(m[1]) : ''; }
+function clearRoomHash() { try { if (/raum=/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* ignore */ } }
+async function joinPendingRoom() {
+  const id = S.pendingRoom; if (!id || !me()) return false;
+  S.pendingRoom = ''; clearRoomHash();
+  const res = await enterRoomById(id, false);
+  if (res !== true) { nav('rooms'); toast('⚠️ ' + res); }
+  return true;
 }
 function msgTime(ms) {
   if (typeof ms !== 'number') return '';
@@ -2258,15 +2593,22 @@ function renderSetup() {
   const local = S.mode === 'local';
   $('modeBadge').textContent = local ? '💻 Lokaler Modus' : '☁️ Firebase-Modus';
   $('modeText').textContent = local
-    ? 'Alle Daten werden nur in diesem Browser gespeichert (Profil, Kundenkarten, Kalender, Wichteln, Räume). Das Passwort ist hier nur eine Sichtsperre. Für das Team: Firebase-Werte bei firebaseConfig eintragen und die Datei als index.html veröffentlichen (Anleitung unten). Dann schaltet die App auf gemeinsame Daten und echte Konten um.'
+    ? 'Alle Daten werden nur in diesem Browser gespeichert (Profil, Kundenkarten, Kalender, Wichteln, Räume). Andere Personen sehen dich nicht, auch nicht in den Räumen. Das Passwort ist hier nur eine Sichtsperre. Für das Team: unten «Firebase verbinden» und die Anleitung zum Veröffentlichen befolgen.'
     : 'Daten liegen in Firestore und sind nur für angemeldete, bestätigte ' + (CONFIG.allowedEmailDomain ? '@' + CONFIG.allowedEmailDomain + '-' : '') + 'Konten zugänglich. Du bist Admin.';
   $('localTools').classList.toggle('hidden', !local);
-  const rooms = local ? '✅ Aktiv (lokal, zum Ausprobieren auch in zwei Tabs)'
+  const cs = $('connectStatus');
+  cs.className = 'notice' + (local ? ' warn' : '');
+  cs.textContent = local
+    ? 'Keine Firebase-Werte gefunden. Die App läuft deshalb im lokalen Modus: Jeder Browser ist für sich allein, auch in den Räumen.'
+    : 'Verbunden mit Firebase-Projekt «' + (S.fbProject || '?') + '». Die Werte kommen aus: ' + (S.configSource || 'unbekannt') + '.';
+  const rooms = local ? '🔴 Nur lokal: Niemand sonst sieht dich (zum Ausprobieren in zwei Tabs)'
     : S.roomsDenied ? '🔒 Gesperrt: Firestore-Regeln unten kopieren und in Firebase veröffentlichen, dann neu laden'
     : S.roomsChecked ? '✅ Aktiv' : '⏳ Wird geprüft (sobald dein Profil gespeichert ist)';
   $('diagList').replaceChildren(...[
     ['App-Version', CONFIG.version],
     ['Modus', local ? 'Lokal (nur dieser Browser)' : 'Firebase' + (S.fbProject ? ' · Projekt «' + S.fbProject + '»' : '')],
+    ['Firebase-Werte aus', local ? 'keine gefunden' : (S.configSource || 'unbekannt')],
+    ['Eigene Räume mit Code', local ? 'lokal' : S.codeRoomsDenied ? '🔒 Gesperrt: neue Firestore-Regeln veröffentlichen' : '✅ Bereit'],
     ['Live-Räume', rooms],
     ['Adresse', location.protocol === 'file:' ? 'Lokale Datei' : location.host + location.pathname]
   ].map(([k, v]) => h('li', null, h('b', { text: k + ': ' }), v)));
@@ -2283,6 +2625,28 @@ function bindEvents() {
   $('reactBar').replaceChildren(...CONFIG.reactions.map(k => h('button', { type: 'button', title: k.label, 'aria-label': 'Reaktion senden: ' + k.label, text: k.e, onclick: () => sendReaction(k.id) })));
   $('chatForm').addEventListener('submit', sendChat);
   $('leaveRoomBtn').addEventListener('click', leaveRoom);
+  $('createRoomBtn').addEventListener('click', () => toggleMiniForm('create'));
+  $('joinCodeBtn').addEventListener('click', () => toggleMiniForm('join'));
+  $('createRoomForm').addEventListener('submit', createRoom);
+  $('joinCodeForm').addEventListener('submit', joinByCode);
+  $('copyLinkBtn').addEventListener('click', copyInvite);
+  $('copyCodeBtn').addEventListener('click', () => { const r = roomInfo(S.room); if (r && r.custom) copyText(r.code, '📋 Code ' + r.code + ' kopiert.'); });
+  window.addEventListener('hashchange', () => { const id = roomFromHash(); if (!id) return; S.pendingRoom = id; if (S.user && me()) joinPendingRoom(); });
+  // Firebase verbinden: Konfiguration einfügen und firebase-config.js erzeugen
+  let fbFile = '';
+  $('fbPaste').addEventListener('input', () => {
+    const raw = $('fbPaste').value, err = $('fbPasteError'), pre = $('fbConfigPreview');
+    fbFile = '';
+    if (!raw.trim()) { err.textContent = ''; pre.classList.add('hidden'); }
+    else {
+      const res = C.parseFirebaseConfig(raw);
+      if (res.missing.length) { err.textContent = 'Es fehlen noch: ' + res.missing.join(', ') + '. Bitte den ganzen Block aus der Firebase-Konsole kopieren.'; pre.classList.add('hidden'); }
+      else { err.textContent = ''; fbFile = C.firebaseConfigFile(res.config, CONFIG.version); pre.textContent = fbFile; pre.classList.remove('hidden'); }
+    }
+    $('fbDownloadBtn').disabled = !fbFile; $('fbCopyBtn').disabled = !fbFile;
+  });
+  $('fbDownloadBtn').addEventListener('click', () => { if (fbFile) downloadText('firebase-config.js', fbFile, 'application/javascript'); });
+  $('fbCopyBtn').addEventListener('click', () => { if (fbFile) copyText(fbFile, '📋 Inhalt von firebase-config.js kopiert.'); });
   $('updateReloadBtn').addEventListener('click', () => { try { location.reload(); } catch (e) { /* ignore */ } });
   $('updateLaterBtn').addEventListener('click', () => $('updateBar').classList.add('hidden'));
   ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(ev => window.addEventListener(ev, () => {
@@ -2335,18 +2699,22 @@ function bindEvents() {
   window.addEventListener('offline', () => setSave('offline'));
 }
 
-function detectMode() {
-  if (window.__WZ_FAKE_FB__) return 'firebase';
-  if (CONFIG.mode === 'local' || CONFIG.mode === 'firebase') return CONFIG.mode;
-  if (CONFIG.firebaseConfig.apiKey) return 'firebase';
-  return /\.(web\.app|firebaseapp\.com)$/.test(location.hostname) ? 'firebase' : 'local';
+async function detectMode() {
+  if (window.__WZ_FAKE_FB__) { S.configSource = 'Testumgebung'; return 'firebase'; }
+  if (CONFIG.mode === 'local') return 'local';
+  if (CONFIG.firebaseConfig.apiKey) { S.configSource = 'index.html (firebaseConfig)'; return 'firebase'; }
+  SIDE_CONFIG = await loadSideConfig();
+  if (SIDE_CONFIG) { S.configSource = CONFIG.firebaseConfigFile; return 'firebase'; }
+  if (CONFIG.mode === 'firebase' || /\.(web\.app|firebaseapp\.com)$/.test(location.hostname)) { S.configSource = 'Firebase Hosting'; return 'firebase'; }
+  return 'local';
 }
 async function init() {
   S.today = todayKey();
   decorate();
   bindEvents();
   renderCardIdeas();
-  S.mode = detectMode();
+  S.pendingRoom = roomFromHash();
+  S.mode = await detectMode();
   setupLoginUI();
   setAuthMode('login');
   try {
@@ -2366,7 +2734,7 @@ async function init() {
   S.store.onAuth(u => { onAuthChanged(u).catch(e => toast('⚠️ ' + errMsg(e))); });
 }
 window.WZ = {
-  S, CONFIG, buildRules, checkForUpdate,
+  S, CONFIG, buildRules, checkForUpdate, C,
   setToday(k) { window.__WZ_TODAY__ = k; S.today = todayKey(); if (S.user) { renderHeader(); renderHome(); renderCalendar(); } }
 };
 init();
