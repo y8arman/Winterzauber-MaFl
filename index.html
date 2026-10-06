@@ -1,0 +1,1701 @@
+<!doctype html>
+<!--
+  WINTERZAUBER – Team-Weihnachts-App (eine einzige Datei)
+  Sofort testen: Datei im Browser öffnen, Passwort Winterzauber2026 (lokaler Modus, Daten bleiben in diesem Browser).
+  Fürs Team: nach «firebaseConfig» suchen und die Firebase-Werte eintragen. Die Anleitung und die Firestore-Regeln stehen in der App unter «Setup».
+-->
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Winterzauber – Team-Weihnachten</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎄</text></svg>">
+<style>
+:root{--red:#b3122e;--red-d:#7d0c1f;--green:#0f4d36;--green-d:#0a3324;--gold:#e2b04a;--gold-l:#f6dd9a;--cream:#fffaf0;--ink:#24312b;--muted:#5f6f67;--snow:#ffffff;--night:#0b1d33;--night2:#132f52;--shadow:0 14px 34px rgba(10,40,30,.16);--radius:20px}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:"Segoe UI",Inter,Arial,sans-serif;color:var(--ink);background:#f7f1e6;min-height:100vh;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:radial-gradient(circle at 15% 10%,#fff 0,#fbf4e7 35%,transparent 60%),repeating-linear-gradient(45deg,rgba(179,18,46,.035) 0 14px,transparent 14px 28px),#f7f1e6}
+h1,h2,h3{font-family:Georgia,"Times New Roman",serif;margin-top:0}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.hidden{display:none!important}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+#snowLayer{position:fixed;inset:0;pointer-events:none;z-index:50;overflow:hidden}
+.flake{position:absolute;top:-24px;color:#fff;text-shadow:0 0 4px rgba(120,150,190,.8);animation:fall linear infinite;will-change:transform;user-select:none}
+@keyframes fall{0%{transform:translate3d(0,-5vh,0) rotate(0)}50%{transform:translate3d(28px,50vh,0) rotate(180deg)}100%{transform:translate3d(-12px,105vh,0) rotate(360deg)}}
+
+.lights{position:absolute;left:0;right:0;top:0;height:34px;display:flex;justify-content:space-around;pointer-events:none;z-index:3}
+.lights::before{content:"";position:absolute;left:0;right:0;top:6px;height:14px;border-bottom:2px solid #2b3d2f;border-radius:0 0 50% 50%/0 0 100% 100%}
+.bulb{position:relative;width:11px;height:18px;margin-top:12px;border-radius:50%;background:var(--c);box-shadow:0 0 12px 3px var(--c);animation:twinkle 1.6s ease-in-out infinite;animation-delay:var(--d)}
+.bulb::before{content:"";position:absolute;top:-5px;left:2px;width:7px;height:6px;background:#2b3d2f;border-radius:2px}
+@keyframes twinkle{0%,100%{opacity:1}50%{opacity:.35;box-shadow:0 0 3px 1px var(--c)}}
+
+.sky{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.moon{position:absolute;right:16%;top:84px;width:70px;height:70px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fffbe8,#f3dd9b);box-shadow:0 0 40px 10px rgba(255,240,190,.35)}
+.star{position:absolute;width:3px;height:3px;background:#fff;border-radius:50%;animation:twinkle 2.4s ease-in-out infinite}
+.sleigh{position:absolute;top:96px;left:100%;z-index:3;pointer-events:auto;cursor:pointer;background:none;border:0;padding:4px;line-height:0;animation:fly 24s linear infinite;filter:drop-shadow(0 6px 6px rgba(0,0,0,.35))}
+.sleigh svg{display:block}
+.sleigh .bob{animation:bob .6s ease-in-out infinite alternate}.sleigh .d2{animation-delay:.2s}.sleigh .d3{animation-delay:.4s}
+.sleigh .nose{animation:twinkle 1s ease-in-out infinite}
+@keyframes bob{from{transform:translateY(-3px)}to{transform:translateY(3px)}}
+.deco-svg{display:inline-block;vertical-align:bottom;margin-right:-6px;filter:drop-shadow(0 4px 4px rgba(0,0,0,.25))}
+@keyframes fly{0%{left:105%;transform:translateY(0)}25%{transform:translateY(-18px)}50%{transform:translateY(10px)}75%{transform:translateY(-12px)}100%{left:-40%;transform:translateY(0)}}
+
+.top{position:relative;background:linear-gradient(180deg,var(--night) 0%,var(--night2) 62%,#21507a 100%);color:#fff;padding:52px 5vw 120px;overflow:hidden}
+.top .ground{position:absolute;left:-5%;right:-5%;bottom:-2px;height:90px;background:#fff;border-radius:50% 50% 0 0/100% 100% 0 0;box-shadow:0 -6px 24px rgba(255,255,255,.45)}
+.top .trees{position:absolute;bottom:40px;left:3%;z-index:2;line-height:0}
+.top .trees.right{left:auto;right:3%}
+.brandbar{position:relative;z-index:4;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-family:Georgia,serif;font-weight:700;font-size:24px}
+.brand .logo{display:grid;place-items:center;width:46px;height:46px;border-radius:14px;background:#fffdf8;box-shadow:0 0 0 3px var(--gold) inset}
+.userbox{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.savepill{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:6px 11px;border-radius:99px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25)}
+.savepill .dot{width:9px;height:9px;border-radius:50%;background:#7fd19b}
+.savepill[data-state=saving] .dot{background:var(--gold);animation:twinkle .8s infinite}
+.savepill[data-state=error] .dot{background:#ff6b6b}
+.savepill[data-state=offline] .dot{background:#aab}
+.hero{position:relative;z-index:4;max-width:780px;margin:38px auto 0;text-align:center}
+.hero h1{font-size:clamp(32px,6vw,62px);margin:0 0 10px;text-shadow:0 4px 18px rgba(0,0,0,.35)}
+.hero h1 .gold{color:var(--gold-l)}
+.hero p{font-size:18px;opacity:.92;margin:0}
+.countdown{display:inline-flex;gap:8px;align-items:center;margin-top:18px;padding:9px 16px;border-radius:99px;background:rgba(179,18,46,.85);border:2px solid var(--gold);font-weight:700}
+
+.app{max-width:1200px;margin:-64px auto 40px;padding:0 16px;position:relative;z-index:5}
+.nav{display:flex;gap:6px;background:#fff;border-radius:18px;padding:8px;box-shadow:var(--shadow);overflow-x:auto;border:2px solid var(--gold-l);scrollbar-width:thin}
+.nav button{border:0;background:transparent;padding:12px 15px;min-height:44px;border-radius:12px;white-space:nowrap;font-weight:600;color:var(--ink)}
+.nav button:hover{background:#f6efe1}
+.nav button.active{background:var(--red);color:#fff;box-shadow:0 4px 12px rgba(179,18,46,.35)}
+.page{display:none;padding:26px 0}
+.page.active{display:block;animation:pagein .35s ease}
+@keyframes pagein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.grid{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:18px}
+.span3{grid-column:span 3}.span4{grid-column:span 4}.span5{grid-column:span 5}.span6{grid-column:span 6}.span7{grid-column:span 7}.span8{grid-column:span 8}.span12{grid-column:span 12}
+.card{position:relative;background:#fffdf8;border-radius:var(--radius);padding:24px 22px 22px;box-shadow:var(--shadow);border:1px solid #efe3cc;min-width:0}
+.card.snowy::before{content:"";position:absolute;left:10px;right:10px;top:-9px;height:20px;background:#fff;border-radius:14px 14px 50% 50%/14px 14px 100% 100%;box-shadow:0 2px 4px rgba(0,0,0,.06);pointer-events:none}
+.card.festive{background:linear-gradient(135deg,var(--green) 0%,var(--green-d) 100%);color:#fff;border-color:var(--green-d)}
+.card.festive .muted{color:#d5e8de}
+.card.redcard{background:linear-gradient(135deg,var(--red) 0%,var(--red-d) 100%);color:#fff;border:0}
+.kpi{font-size:44px;font-weight:800;font-family:Georgia,serif;color:var(--red);line-height:1}
+.festive .kpi,.redcard .kpi{color:var(--gold-l)}
+.muted{color:var(--muted)}
+.quote{font-family:Georgia,serif;font-size:clamp(19px,2.4vw,25px);line-height:1.45;margin:10px 0 16px}
+.pill{display:inline-block;padding:5px 10px;border-radius:999px;background:#f3e6c8;color:#5d4410;font-size:12px;font-weight:700}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.spread{justify-content:space-between}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;border:0;border-radius:12px;background:var(--red);color:#fff;padding:10px 16px;font-weight:700;transition:transform .12s,box-shadow .12s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 6px 14px rgba(0,0,0,.15)}
+.btn:active{transform:translateY(1px)}
+.btn.green{background:var(--green)}
+.btn.gold{background:var(--gold);color:#3b2a07}
+.btn.light{background:#f3ead9;color:var(--ink)}
+.btn.ghost{background:transparent;color:inherit;border:1px solid currentColor}
+.btn.small{min-height:36px;padding:6px 11px;font-size:14px}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:none}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.field label{font-weight:600;font-size:14px}
+.field input,.field textarea,.field select,.input{border:1px solid #d7cbb3;border-radius:10px;padding:11px;background:#fff;min-height:44px;width:100%}
+.field textarea{min-height:92px;resize:vertical}
+.check{display:flex;gap:10px;align-items:flex-start;margin:6px 0 16px}
+.check input{width:22px;height:22px;margin-top:1px;accent-color:var(--red)}
+.hint{font-size:13px;color:var(--muted)}
+.empty{padding:24px;text-align:center;border:2px dashed #e0d3b8;border-radius:16px;color:var(--muted)}
+.notice{border-left:4px solid var(--gold);padding:10px 14px;background:#fff6dc;border-radius:8px;margin:0 0 16px}
+.notice.warn{border-color:var(--red);background:#fdecee}
+.progress{height:14px;background:#efe5d2;border-radius:99px;overflow:hidden;margin:12px 0}
+.progress i{display:block;height:100%;width:0;background:repeating-linear-gradient(45deg,var(--red) 0 10px,#fff 10px 16px);transition:width .6s ease;border-radius:99px}
+.festive .progress{background:rgba(255,255,255,.18)}
+.statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.stat{background:rgba(255,255,255,.12);border-radius:10px;padding:8px;text-align:center;font-size:12px}
+.stat b{display:block;font-size:20px}
+.focus-item{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px dashed #e6d9bf}
+.focus-item:last-child{border-bottom:0}
+
+.month{margin-bottom:26px}
+.month h3{display:flex;align-items:center;gap:8px;color:var(--green)}
+.doors{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:10px}
+.door{position:relative;aspect-ratio:1;min-height:64px;border:0;border-radius:14px;color:#fff;font-weight:800;font-size:22px;font-family:Georgia,serif;background:linear-gradient(145deg,#c41a37,#7d0c1f);box-shadow:inset 0 0 0 3px rgba(255,255,255,.12),0 6px 12px rgba(125,12,31,.25);overflow:hidden;transition:transform .2s}
+.door:nth-child(3n+2){background:linear-gradient(145deg,#16684a,#0a3324)}
+.door:nth-child(5n+3){background:linear-gradient(145deg,#d9a53a,#8b6114)}
+.door::before,.door::after{content:"";position:absolute;background:rgba(255,236,170,.75)}
+.door::before{left:calc(50% - 3px);top:0;bottom:0;width:6px}
+.door::after{top:calc(50% - 3px);left:0;right:0;height:6px}
+.door span{position:relative;z-index:1;display:inline-grid;place-items:center;min-width:1.7em;height:1.7em;padding:0 .2em;border-radius:999px;background:rgba(0,0,0,.28);text-shadow:0 2px 4px rgba(0,0,0,.4)}
+.door.opened span{background:transparent}
+.door small{position:absolute;bottom:4px;left:0;right:0;font-size:10px;font-family:"Segoe UI",Arial,sans-serif;font-weight:600;z-index:1;opacity:.9}
+.door:hover:not(.locked){transform:rotate(-3deg) scale(1.05)}
+.door.locked{filter:grayscale(.75) brightness(.85);cursor:not-allowed}
+.door.locked span::after{content:" 🔒";font-size:12px}
+.door.today{animation:pulse 1.6s ease-in-out infinite;outline:3px solid var(--gold);outline-offset:2px}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(226,176,74,.7)}50%{box-shadow:0 0 0 10px rgba(226,176,74,0)}}
+.door.opened{background:#fffdf8!important;color:var(--green);box-shadow:inset 0 0 0 3px var(--gold)}
+.door.opened::before,.door.opened::after{display:none}
+.door.opened span{text-shadow:none}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+
+.modal{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:rgba(5,18,32,.6);padding:16px;animation:fade .2s}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.modal-box{position:relative;width:min(520px,100%);max-height:90vh;overflow:auto;background:#fffdf8;border-radius:22px;padding:30px 26px 24px;text-align:center;border:3px solid var(--gold);box-shadow:0 20px 60px rgba(0,0,0,.4);animation:pop .35s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{transform:scale(.7) rotate(-4deg);opacity:0}to{transform:none;opacity:1}}
+.modal-box .big{font-size:58px;line-height:1;margin-bottom:8px}
+.modal-close{position:absolute;top:8px;right:8px;width:44px;height:44px;border:0;border-radius:50%;background:#f3ead9;font-size:20px}
+.answer{margin-top:14px;padding:12px;border-radius:12px;background:#eaf5ee;color:var(--green);font-weight:600}
+
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:14px 0}
+.toolbar .input{width:auto;flex:1 1 180px}
+.table-wrap{overflow-x:auto;border-radius:14px;border:1px solid #efe3cc}
+.table{width:100%;border-collapse:collapse;min-width:820px;background:#fff}
+.table th,.table td{text-align:left;padding:8px;border-bottom:1px solid #f0e6d3;vertical-align:middle}
+.table th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);background:#fbf5ea}
+.table input,.table select{width:100%;min-height:40px;border:1px solid transparent;border-radius:8px;padding:6px 8px;background:transparent}
+.table input:hover,.table select:hover{border-color:#e3d6bb}
+.table input:focus,.table select:focus{border-color:var(--gold);background:#fffdf5}
+tr[data-status="Offen"] td:first-child{box-shadow:inset 5px 0 0 #d9455f}
+tr[data-status="In Arbeit"] td:first-child{box-shadow:inset 5px 0 0 var(--gold)}
+tr[data-status="Geschrieben"] td:first-child{box-shadow:inset 5px 0 0 #4a86c5}
+tr[data-status="Versendet"] td:first-child{box-shadow:inset 5px 0 0 #2f9a5c}
+tr[data-status="Versendet"]{background:#f1faf4}
+.idea{padding:12px 14px;border-radius:12px;background:#fbf5ea;margin-bottom:10px;display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+.idea p{margin:0}
+
+.rules li{margin:8px 0}
+.giftbox{position:relative;display:block;width:100%;border:0;border-radius:20px;padding:34px 18px;color:#fff;text-align:center;background:linear-gradient(135deg,var(--red),var(--red-d));min-height:220px;overflow:hidden}
+.giftbox::before{content:"";position:absolute;left:calc(50% - 14px);top:0;bottom:0;width:28px;background:var(--gold)}
+.giftbox::after{content:"";position:absolute;top:calc(50% - 14px);left:0;right:0;height:28px;background:var(--gold)}
+.giftbox .bow{position:relative;z-index:1;font-size:64px;display:block;animation:wiggle 2.2s ease-in-out infinite}
+.giftbox .label{position:relative;z-index:1;display:inline-block;margin-top:10px;background:#fff;color:var(--red);padding:8px 14px;border-radius:10px;font-weight:800}
+@keyframes wiggle{0%,100%{transform:rotate(0)}10%{transform:rotate(-8deg)}20%{transform:rotate(8deg)}30%{transform:rotate(0)}}
+.reveal{border-radius:20px;padding:26px;text-align:center;background:linear-gradient(135deg,var(--green),var(--green-d));color:#fff;animation:pop .5s}
+.reveal .name{font-family:Georgia,serif;font-size:34px;color:var(--gold-l);margin:6px 0 12px;word-break:break-word}
+.reveal .prefs{background:rgba(255,255,255,.12);border-radius:12px;padding:12px;text-align:left;white-space:pre-wrap;word-break:break-word}
+.participant{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed #e6d9bf;min-width:0}
+.participant span{min-width:0;overflow-wrap:anywhere}
+.avatar{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--green);color:#fff;font-weight:700;margin-right:8px;flex:0 0 34px}
+
+.login{min-height:100vh;display:grid;place-items:center;padding:24px 16px;position:relative;background:linear-gradient(180deg,var(--night) 0%,var(--night2) 70%,#2a6091 100%);overflow:hidden}
+.login .ground{position:absolute;left:-10%;right:-10%;bottom:-2px;height:22vh;background:#fff;border-radius:50% 50% 0 0/100% 100% 0 0}
+.login .trees{position:absolute;bottom:calc(22vh - 34px);z-index:1;line-height:0}
+.login-card{position:relative;z-index:6;width:min(430px,100%);background:#fffdf8;border-radius:24px;padding:20px 26px 28px;margin-top:50px;box-shadow:0 30px 80px rgba(0,0,0,.45);border:3px solid var(--gold);text-align:center}
+.login-card .santa{line-height:0;display:inline-block;margin-top:-70px;animation:wiggle 3s ease-in-out infinite;filter:drop-shadow(0 6px 8px rgba(0,0,0,.25))}
+.login-card h1{font-size:32px;margin:8px 0 4px;color:var(--red)}
+.login-card form{text-align:left;margin-top:18px}
+.tabs{display:flex;gap:6px;background:#f3ead9;padding:5px;border-radius:12px;margin-top:16px}
+.tabs button{flex:1;border:0;background:transparent;border-radius:9px;min-height:40px;font-weight:600}
+.tabs button.active{background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+.err{color:var(--red);font-weight:600;min-height:20px;font-size:14px;margin:4px 0 8px}
+.linkbtn{background:none;border:0;color:var(--green);text-decoration:underline;padding:8px 0;min-height:44px}
+
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--green-d);color:#fff;padding:13px 18px;border-radius:14px;z-index:200;max-width:min(92vw,520px);box-shadow:0 10px 30px rgba(0,0,0,.3);border:2px solid var(--gold);text-align:center}
+.footer{text-align:center;color:var(--muted);padding:10px 16px 30px;font-size:13px}
+.loading{min-height:100vh;display:grid;place-items:center;background:var(--night);color:#fff;font-size:20px}
+
+@media (max-width:900px){.span3,.span4,.span5,.span6,.span7,.span8{grid-column:span 12}}
+@media (max-width:640px){
+  .top{padding:44px 16px 110px}.hero{margin-top:22px}.hero p{font-size:16px}
+  .top .trees.right{display:none}.moon{width:46px;height:46px;top:50px}
+  .sleigh{top:104px}.sleigh svg{width:200px;height:44px}.top .trees{transform:scale(.7);transform-origin:bottom left}
+  .doors{grid-template-columns:repeat(auto-fill,minmax(62px,1fr));gap:8px}
+  .door{font-size:18px}.statgrid{grid-template-columns:repeat(2,1fr)}
+  .card{padding:20px 16px}
+}
+@media (max-height:420px){.top{padding-top:44px;padding-bottom:96px}.hero{margin-top:12px}.hero h1{font-size:30px}.sleigh{top:40px}.login .trees{display:none}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.sleigh{left:auto;right:12%}}
+
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <radialGradient id="noseGlow"><stop offset="0" stop-color="#ff5a5a"/><stop offset="1" stop-color="#ff0000" stop-opacity="0"/></radialGradient>
+  </defs>
+  <symbol id="sym-reindeer" viewBox="0 0 100 80">
+    <path d="M26 13 L23 2 M24.5 7 L18 3 M23.5 4 L27 -1 M31 13 L34 2 M32.5 7 L39 3" stroke="#6b4423" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+    <g stroke="#5a3a1c" stroke-width="4.2" stroke-linecap="round"><path d="M38 52 L31 70"/><path d="M45 54 L48 72"/><path d="M68 54 L62 72"/><path d="M76 52 L85 68"/></g>
+    <ellipse cx="57" cy="44" rx="27" ry="13" fill="#8b5a2b"/>
+    <ellipse cx="57" cy="50" rx="17" ry="5" fill="#b07a48"/>
+    <path d="M32 40 L25 21 L36 18 L44 38 Z" fill="#8b5a2b"/>
+    <ellipse cx="25" cy="19" rx="11" ry="7.5" fill="#8b5a2b"/>
+    <ellipse cx="15" cy="22" rx="6" ry="4.5" fill="#a46d3b"/>
+    <ellipse cx="33" cy="13" rx="5" ry="2.2" fill="#6b4423" transform="rotate(-25 33 13)"/>
+    <circle cx="24" cy="16.5" r="1.7" fill="#1a1a1a"/>
+    <circle cx="10.5" cy="21.5" r="3" fill="#3b2412"/>
+    <circle cx="84" cy="38" r="3.5" fill="#f5e6d0"/>
+    <path d="M42 33 Q41 45 43 56" stroke="#c0392b" stroke-width="3.5" fill="none"/>
+    <circle cx="43" cy="53" r="2.8" fill="#e2b04a"/>
+  </symbol>
+  <symbol id="sym-sleigh" viewBox="0 0 130 92">
+    <rect x="96" y="20" width="18" height="16" rx="2" fill="#1f7a4d"/><rect x="103" y="20" width="4" height="16" fill="#e2b04a"/>
+    <rect x="104" y="8" width="16" height="13" rx="2" fill="#4a86c5"/><rect x="110" y="8" width="4" height="13" fill="#fff"/>
+    <ellipse cx="78" cy="38" rx="15" ry="17" fill="#c0392b"/>
+    <rect x="63" y="38" width="30" height="5" fill="#222"/><rect x="75" y="37" width="7" height="7" fill="#e2b04a"/>
+    <circle cx="66" cy="34" r="5" fill="#c0392b"/><circle cx="62" cy="35" r="3.5" fill="#fff"/>
+    <circle cx="78" cy="14" r="9" fill="#f6d2b5"/>
+    <path d="M68 15 Q70 34 78 33 Q87 34 88 15 Q84 22 78 21 Q72 22 68 15 Z" fill="#fff"/>
+    <path d="M70 7 Q78 -6 92 2 L96 8 L88 7 Z" fill="#c0392b"/><circle cx="96" cy="8" r="3.4" fill="#fff"/>
+    <rect x="68" y="5" width="20" height="5" rx="2.5" fill="#fff"/>
+    <circle cx="74" cy="13" r="1.3" fill="#222"/><circle cx="72" cy="17" r="2" fill="#f19a9a"/>
+    <path d="M8 34 Q2 26 9 24 Q17 23 22 42 L98 42 L102 22 L116 22 L111 66 L26 66 Q10 64 8 34 Z" fill="#c0392b" stroke="#e2b04a" stroke-width="2.4"/>
+    <path d="M30 52 L104 52" stroke="#e2b04a" stroke-width="1.6" stroke-dasharray="4 4"/>
+    <path d="M28 66 L28 76 M98 66 L98 78" stroke="#e2b04a" stroke-width="3"/>
+    <path d="M4 82 Q0 74 10 74 L112 80 Q124 80 126 70" stroke="#e2b04a" stroke-width="4" fill="none" stroke-linecap="round"/>
+  </symbol>
+  <symbol id="sym-tree" viewBox="0 0 60 82">
+    <rect x="26" y="68" width="8" height="13" fill="#6b4423"/>
+    <path d="M30 22 L2 72 L58 72 Z" fill="#14593c"/><path d="M30 14 L7 54 L53 54 Z" fill="#1a6d49"/><path d="M30 6 L12 36 L48 36 Z" fill="#1f8a5a"/>
+    <path d="M14 36 Q30 42 46 34 M9 54 Q30 61 51 52" stroke="#e2b04a" stroke-width="1.6" fill="none"/>
+    <circle cx="22" cy="46" r="2.6" fill="#e74c3c"/><circle cx="38" cy="44" r="2.6" fill="#f1c40f"/><circle cx="30" cy="28" r="2.4" fill="#3498db"/><circle cx="16" cy="64" r="2.6" fill="#f1c40f"/><circle cx="44" cy="64" r="2.6" fill="#e74c3c"/><circle cx="30" cy="58" r="2.4" fill="#ecf0f1"/>
+    <path d="M30 0 L32.2 5 L37.6 5.4 L33.4 8.8 L34.8 14 L30 11 L25.2 14 L26.6 8.8 L22.4 5.4 L27.8 5 Z" fill="#f6dd9a"/>
+  </symbol>
+  <symbol id="sym-snowman" viewBox="0 0 60 82">
+    <circle cx="30" cy="62" r="19" fill="#fff" stroke="#cfe0ef" stroke-width="1.5"/><circle cx="30" cy="34" r="13" fill="#fff" stroke="#cfe0ef" stroke-width="1.5"/>
+    <rect x="19" y="6" width="22" height="14" rx="2" fill="#222"/><rect x="14" y="19" width="32" height="4" rx="2" fill="#222"/><rect x="19" y="15" width="22" height="3" fill="#c0392b"/>
+    <circle cx="25" cy="31" r="1.7" fill="#222"/><circle cx="35" cy="31" r="1.7" fill="#222"/><path d="M30 34 L42 37 L30 37.5 Z" fill="#e67e22"/>
+    <path d="M18 44 Q30 50 42 44 L42 48 Q30 54 18 48 Z" fill="#c0392b"/><path d="M36 48 L40 60 L35 59 Z" fill="#c0392b"/>
+    <circle cx="30" cy="58" r="1.8" fill="#222"/><circle cx="30" cy="66" r="1.8" fill="#222"/>
+  </symbol>
+  <symbol id="sym-santa" viewBox="0 0 100 100">
+    <path d="M18 40 Q30 2 66 8 Q84 12 92 34 L80 36 Q72 20 58 22 Z" fill="#c0392b"/>
+    <circle cx="90" cy="38" r="8" fill="#fff"/>
+    <circle cx="50" cy="56" r="25" fill="#f6d2b5"/>
+    <rect x="16" y="34" width="62" height="13" rx="6.5" fill="#fff"/>
+    <path d="M24 60 Q22 96 50 98 Q78 96 76 60 Q70 72 62 70 Q56 78 50 76 Q44 78 38 70 Q30 72 24 60 Z" fill="#fff"/>
+    <path d="M34 66 Q42 58 50 66 Q58 58 66 66 Q58 72 50 68 Q42 72 34 66 Z" fill="#f2f2f2" stroke="#ddd"/>
+    <circle cx="40" cy="54" r="3" fill="#222"/><circle cx="60" cy="54" r="3" fill="#222"/>
+    <circle cx="41" cy="53" r="1" fill="#fff"/><circle cx="61" cy="53" r="1" fill="#fff"/>
+    <circle cx="33" cy="61" r="4.5" fill="#f19a9a" opacity=".7"/><circle cx="67" cy="61" r="4.5" fill="#f19a9a" opacity=".7"/>
+    <circle cx="50" cy="61" r="5" fill="#e8a08a"/>
+    <path d="M36 46 Q40 43 44 46 M56 46 Q60 43 64 46" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </symbol>
+</svg>
+<div id="snowLayer" aria-hidden="true"></div>
+
+<div id="loadingView" class="loading" role="status">🎄 Winterzauber wird geladen …</div>
+
+<!-- ================= LOGIN ================= -->
+<section id="loginView" class="login hidden" aria-labelledby="loginTitle">
+  <div class="sky" aria-hidden="true"><div class="moon"></div><div class="stars"></div></div>
+  <button type="button" class="sleigh" data-sleigh aria-label="Schlitten fangen"><svg viewBox="0 0 420 92" width="300" height="66" aria-hidden="true" focusable="false">
+    <path d="M70 40 L290 52 M160 40 L290 52 M250 40 L290 52" stroke="#e2b04a" stroke-width="1.6" fill="none"/>
+    <use href="#sym-reindeer" class="bob" x="0" y="6" width="90" height="72"/><circle cx="10" cy="25" r="7" fill="url(#noseGlow)" class="nose"/><circle cx="10" cy="25" r="2.8" fill="#ff1a1a"/>
+    <use href="#sym-reindeer" class="bob d2" x="90" y="6" width="90" height="72"/>
+    <use href="#sym-reindeer" class="bob d3" x="180" y="6" width="90" height="72"/>
+    <use href="#sym-sleigh" x="282" y="0" width="135" height="92"/>
+  </svg></button>
+  <div class="trees" style="left:3%" aria-hidden="true"><svg class="deco-svg" width="54" height="73" aria-hidden="true" focusable="false"><use href="#sym-tree"/></svg><svg class="deco-svg" width="74" height="101" aria-hidden="true" focusable="false"><use href="#sym-tree"/></svg><svg class="deco-svg" width="50" height="68" aria-hidden="true" focusable="false"><use href="#sym-snowman"/></svg></div>
+  <div class="trees" style="right:3%" aria-hidden="true"><svg class="deco-svg" width="64" height="87" aria-hidden="true" focusable="false"><use href="#sym-tree"/></svg><svg class="deco-svg" width="48" height="65" aria-hidden="true" focusable="false"><use href="#sym-tree"/></svg></div>
+  <div class="ground" aria-hidden="true"></div>
+  <div class="login-card">
+    <div class="santa" aria-hidden="true"><svg width="96" height="96"><use href="#sym-santa"/></svg></div>
+    <h1 id="loginTitle">Winterzauber</h1>
+    <p class="muted">Die Weihnachts-App fürs Team. Bitte melde dich an.</p>
+    <div id="authTabs" class="tabs hidden" role="tablist">
+      <button type="button" id="tabLogin" class="active" role="tab">Anmelden</button>
+      <button type="button" id="tabRegister" role="tab">Registrieren</button>
+    </div>
+    <form id="loginForm" novalidate>
+      <div class="field" id="emailField"><label for="loginEmail">E-Mail</label><input id="loginEmail" type="email" autocomplete="username" maxlength="120"></div>
+      <div class="field"><label for="loginPassword">Passwort</label><input id="loginPassword" type="password" autocomplete="current-password" maxlength="128" required></div>
+      <div class="field hidden" id="password2Field"><label for="loginPassword2">Passwort wiederholen</label><input id="loginPassword2" type="password" autocomplete="new-password" maxlength="128"></div>
+      <div class="err" id="loginError" role="alert"></div>
+      <button class="btn" type="submit" id="loginSubmit" style="width:100%">🔓 Eintreten</button>
+      <button type="button" class="linkbtn hidden" id="resetPwBtn">Passwort vergessen?</button>
+      <p class="hint" id="loginHint"></p>
+    </form>
+  </div>
+</section>
+
+<!-- ================= VERIFY EMAIL ================= -->
+<section id="verifyView" class="login hidden" aria-labelledby="verifyTitle">
+  <div class="ground" aria-hidden="true"></div>
+  <div class="login-card">
+    <div class="santa" aria-hidden="true"><svg width="96" height="96"><use href="#sym-santa"/></svg></div>
+    <h1 id="verifyTitle">Fast geschafft!</h1>
+    <p>Wir haben dir eine Bestätigungs-Mail an <b id="verifyEmail"></b> geschickt. Klicke auf den Link und komm dann hierher zurück.</p>
+    <div class="err" id="verifyError" role="alert"></div>
+    <div class="row" style="justify-content:center">
+      <button class="btn" type="button" id="verifyDoneBtn">Ich habe bestätigt</button>
+      <button class="btn light" type="button" id="verifyResendBtn">Mail erneut senden</button>
+      <button class="btn ghost" type="button" id="verifyLogoutBtn">Abmelden</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= APP ================= -->
+<div id="appView" class="hidden">
+<header class="top">
+  <div class="lights" id="lights" aria-hidden="true"></div>
+  <div class="sky" aria-hidden="true"><div class="moon"></div><div class="stars"></div></div>
+  <button type="button" class="sleigh" data-sleigh aria-label="Schlitten fangen"><svg viewBox="0 0 420 92" width="300" height="66" aria-hidden="true" focusable="false">
+    <path d="M70 40 L290 52 M160 40 L290 52 M250 40 L290 52" stroke="#e2b04a" stroke-width="1.6" fill="none"/>
+    <use href="#sym-reindeer" class="bob" x="0" y="6" width="90" height="72"/><circle cx="10" cy="25" r="7" fill="url(#noseGlow)" class="nose"/><circle cx="10" cy="25" r="2.8" fill="#ff1a1a"/>
+    <use href="#sym-reindeer" class="bob d2" x="90" y="6" width="90" height="72"/>
+    <use href="#sym-reindeer" class="bob d3" x="180" y="6" width="90" height="72"/>
+    <use href="#sym-sleigh" x="282" y="0" width="135" height="92"/>
+  </svg></button>
+  <div class="brandbar">
+    <div class="brand"><span class="logo" aria-hidden="true"><svg width="28" height="36"><use href="#sym-tree"/></svg></span> Winterzauber</div>
+    <div class="userbox">
+      <span class="savepill" id="savePill" data-state="saved" role="status"><span class="dot"></span><span id="saveText">Gespeichert</span></span>
+      <span id="userName" class="savepill"></span>
+      <button class="btn small ghost" type="button" id="logoutBtn">Abmelden</button>
+    </div>
+  </div>
+  <div class="hero">
+    <h1>Gemeinsam durch die <span class="gold">Weihnachtszeit</span></h1>
+    <p>Adventskalender, Kundenkarten und Wichteln – alles an einem Ort.</p>
+    <div class="countdown" id="countdown">🎁 …</div>
+  </div>
+  <div class="trees" aria-hidden="true"><svg class="deco-svg" width="48" height="65" aria-hidden="true" focusable="false"><use href="#sym-tree"/></svg><svg class="deco-svg" width="66" height="90" aria-hidden="true" focusable="false"><use href="#sym-tree"/></svg><svg class="deco-svg" width="44" height="60" aria-hidden="true" focusable="false"><use href="#sym-tree"/></svg></div>
+  <div class="trees right" aria-hidden="true"><svg class="deco-svg" width="46" height="62" aria-hidden="true" focusable="false"><use href="#sym-snowman"/></svg><svg class="deco-svg" width="58" height="79" aria-hidden="true" focusable="false"><use href="#sym-tree"/></svg></div>
+  <div class="ground" aria-hidden="true"></div>
+</header>
+
+<main class="app">
+  <nav class="nav" aria-label="Hauptnavigation">
+    <button type="button" data-page="home" class="active">🏠 Start</button>
+    <button type="button" data-page="calendar">📅 Adventskalender</button>
+    <button type="button" data-page="cards">✉️ Kundenkarten</button>
+    <button type="button" data-page="santa">🎁 Wichteln</button>
+    <button type="button" data-page="profile">🧑‍🎄 Mein Profil</button>
+    <button type="button" data-page="setup" id="navSetup">⚙️ Setup</button>
+  </nav>
+
+  <section id="page-home" class="page active" aria-label="Start">
+    <div id="profileMissing" class="notice warn hidden">👋 Willkommen! Bitte <button type="button" class="linkbtn" data-goto="profile">erstelle zuerst dein Profil</button> – erst dann kannst du beim Wichteln mitmachen.</div>
+    <div class="grid">
+      <div class="card snowy span8">
+        <span class="pill">✨ Inspiration des Tages</span>
+        <p class="quote" id="dailyQuote"></p>
+        <div class="row">
+          <button class="btn green" type="button" id="todayDoorBtn">🚪 Heutiges Türchen öffnen</button>
+          <button class="btn light" type="button" id="kindBtn">💝 Gute-Tat-Idee</button>
+        </div>
+        <p id="kindIdea" class="muted" aria-live="polite"></p>
+      </div>
+      <div class="card festive span4">
+        <h3>✉️ Kundenkarten</h3>
+        <div class="kpi" id="progressText">0 %</div>
+        <div class="progress"><i id="progressBar"></i></div>
+        <p class="muted" id="progressSub">Noch keine Kunden erfasst.</p>
+        <div class="statgrid" id="statGrid"></div>
+      </div>
+      <div class="card span6">
+        <h3>📌 Meine offenen Karten</h3>
+        <div id="focusList"></div>
+      </div>
+      <div class="card redcard span6">
+        <h3>🎁 Wichteln</h3>
+        <p id="homeSanta">Noch nicht ausgelost.</p>
+        <button class="btn gold" type="button" data-goto="santa">Zum Wichteln</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="page-calendar" class="page" aria-label="Adventskalender">
+    <div class="card snowy">
+      <div class="row spread"><h2>📅 Winterzauber-Kalender</h2><span class="pill" id="calStats"></span></div>
+      <p class="muted">Vom 1. Oktober bis 31. Dezember 2026 – jedes Türchen öffnet an seinem Tag. Verpasste Türchen kannst du jederzeit nachholen.</p>
+      <div class="legend"><span>🔴 verschlossen</span><span>🔒 noch nicht dran</span><span>⭐ heute</span><span>✓ geöffnet</span></div>
+      <div id="calendar" style="margin-top:18px"></div>
+    </div>
+  </section>
+
+  <section id="page-cards" class="page" aria-label="Kundenkarten">
+    <div class="grid">
+      <div class="card snowy span12">
+        <div class="row spread"><div><h2>✉️ Kundenkarten</h2><p class="muted" style="margin:0">Wer schreibt wem – und wie weit sind wir? Änderungen werden automatisch gespeichert.</p></div>
+          <div class="row">
+            <input id="customerFile" type="file" accept=".xlsx,.csv,.txt,.xls" class="hidden">
+            <button class="btn light" type="button" id="uploadBtn">📤 Excel / CSV importieren</button>
+            <button class="btn light" type="button" id="templateBtn">📄 Vorlage</button>
+            <button class="btn light" type="button" id="exportCsvBtn">⬇️ Export</button>
+            <button class="btn" type="button" id="addCustomerBtn">➕ Kunde</button>
+          </div>
+        </div>
+        <p class="hint">Spalten: <b>Kunde</b>, Ansprechpartner, Verantwortlich, Status, Notiz. Erste Tabelle der Excel-Datei wird gelesen (.xlsx oder .csv). Doppelte Einträge (Kunde + Ansprechpartner) werden übersprungen.</p>
+        <div class="toolbar">
+          <label class="sr-only" for="customerSearch">Suchen</label>
+          <input id="customerSearch" class="input" type="search" placeholder="🔍 Suchen …" maxlength="80">
+          <label class="sr-only" for="customerFilter">Filter</label>
+          <select id="customerFilter" class="input" style="flex:0 1 220px">
+            <option value="all">Alle Karten</option>
+            <option value="mine">Nur meine</option>
+            <option value="open">Noch nicht versendet</option>
+            <option value="unassigned">Ohne Verantwortliche</option>
+          </select>
+          <span class="hint" id="customerCount"></span>
+        </div>
+        <datalist id="ownerList"></datalist>
+        <div id="customerArea"></div>
+      </div>
+      <div class="card span12">
+        <h3>💡 Inspiration für Kartentexte</h3>
+        <div id="cardIdeas"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="page-santa" class="page" aria-label="Wichteln">
+    <div class="grid">
+      <div class="card snowy span5">
+        <h2>🎁 Wichteln – so geht's</h2>
+        <ol class="rules">
+          <li>Erstelle dein Profil und lass «Ich mache beim Wichteln mit» aktiviert.</li>
+          <li>Schreib in deine Präferenzen, was dir Freude macht – und was gar nicht.</li>
+          <li>Die Organisation lost aus: Jede Person beschenkt genau eine andere – niemand sich selbst.</li>
+          <li>Dein Wichtelkind siehst nur du. Psst – nicht verraten!</li>
+          <li>Budget einhalten, kreativ sein, mit Herz schenken.</li>
+        </ol>
+        <div class="notice"><b>Budget:</b> <span id="santaBudgetView">–</span><br><b>Übergabe:</b> <span id="santaDateView">–</span></div>
+      </div>
+      <div class="card span7">
+        <h3>Dein Wichtelkind</h3>
+        <div id="myAssignment"></div>
+      </div>
+      <div class="card span6">
+        <div class="row spread"><h3>Teilnehmende</h3><span class="pill" id="participantCount">0</span></div>
+        <div id="participants"></div>
+      </div>
+      <div class="card span6" id="santaAdmin">
+        <h3>⚙️ Organisation</h3>
+        <div class="field"><label for="santaBudget">Budget</label><input id="santaBudget" maxlength="30" placeholder="z. B. 25 CHF"></div>
+        <div class="field"><label for="santaDate">Übergabetermin</label><input id="santaDate" type="date"></div>
+        <div class="row">
+          <button class="btn green" type="button" id="saveSantaBtn">💾 Einstellungen speichern</button>
+          <button class="btn" type="button" id="drawBtn">🎲 Jetzt auslosen</button>
+          <button class="btn light" type="button" id="resetDrawBtn">↺ Auslosung zurücksetzen</button>
+        </div>
+        <p class="hint" id="drawInfo"></p>
+        <details style="margin-top:10px"><summary>Alle Zuordnungen anzeigen (Spoiler!)</summary><div id="allAssignments" class="hint"></div></details>
+      </div>
+    </div>
+  </section>
+
+  <section id="page-profile" class="page" aria-label="Profil">
+    <div class="grid">
+      <div class="card snowy span7">
+        <h2>🧑‍🎄 Mein Profil</h2>
+        <form id="profileForm" novalidate>
+          <div class="field"><label for="pfNickname">Nickname *</label><input id="pfNickname" maxlength="40" required placeholder="z. B. Zimtstern"></div>
+          <div class="field"><label for="pfQuote">Meine Weihnachtsquote</label><textarea id="pfQuote" maxlength="220" placeholder="Was bedeutet Weihnachten für dich?"></textarea></div>
+          <div class="field"><label for="pfPrefs">Wichtel-Präferenzen</label><textarea id="pfPrefs" maxlength="300" placeholder="Interessen, Lieblingsdinge, No-Gos …"></textarea></div>
+          <label class="check"><input type="checkbox" id="pfOptIn" checked> <span>Ich mache beim Wichteln mit</span></label>
+          <div class="err" id="profileError" role="alert"></div>
+          <div class="row"><button class="btn" type="submit" id="profileSaveBtn">💾 Profil speichern</button><span class="hint" id="profileSavedHint"></span></div>
+        </form>
+      </div>
+      <div class="card festive span5">
+        <h3>Vorschau</h3>
+        <div id="profilePreview"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="page-setup" class="page" aria-label="Setup">
+    <div class="grid">
+      <div class="card snowy span6">
+        <h2>⚙️ Setup</h2>
+        <p><span class="pill" id="modeBadge"></span></p>
+        <p class="muted" id="modeText"></p>
+      </div>
+      <div class="card span12" id="publishCard">
+        <h3>🚀 Fürs Team veröffentlichen – nur diese eine Datei</h3>
+        <ol class="rules">
+          <li><b>Firebase-Projekt</b> anlegen (console.firebase.google.com). <b>Authentication → E-Mail/Passwort</b> aktivieren. <b>Firestore Database</b> erstellen (Standort z. B. europe-west6 Zürich).</li>
+          <li><b>Projekteinstellungen → Allgemein → Web-App hinzufügen</b>. Die Werte <code>apiKey</code>, <code>authDomain</code>, <code>projectId</code> und <code>appId</code> in dieser Datei bei <code>firebaseConfig</code> eintragen (Datei im Editor öffnen, nach «firebaseConfig» suchen).</li>
+          <li><b>Firestore → Regeln</b>: die Regeln unten kopieren, einfügen und <b>Veröffentlichen</b> klicken.</li>
+          <li><b>GitHub</b>: neues Repository → «Add file → Upload files» → diese Datei als <code>index.html</code> hochladen → <b>Settings → Pages</b> → Branch <code>main</code>, Ordner <code>/ (root)</code> → Save. Die URL lautet <code>https://&lt;konto&gt;.github.io/&lt;repo&gt;/</code>.</li>
+          <li><b>Firebase → Authentication → Einstellungen → Autorisierte Domains</b>: <code>&lt;konto&gt;.github.io</code> hinzufügen.</li>
+          <li>App öffnen, registrieren, E-Mail bestätigen. In Firestore die Sammlung <code>admins</code> anlegen: Dokument-ID = eigene E-Mail in Kleinbuchstaben, Feld z. B. <code>role: "admin"</code>. Neu anmelden – jetzt ist die Organisation fürs Wichteln sichtbar.</li>
+          <li>Updates: die geänderte <code>index.html</code> im Repository erneut hochladen. Nach etwa einer Minute ist sie live.</li>
+        </ol>
+        <div class="field"><label for="rulesText">Firestore-Regeln</label><textarea id="rulesText" readonly spellcheck="false" style="min-height:220px;font-family:Consolas,monospace;font-size:12px"></textarea></div>
+        <button class="btn green" type="button" id="copyRulesBtn">📋 Regeln kopieren</button>
+        <p class="hint">Die Firebase-Werte in der Datei sind öffentliche Kennungen, keine Geheimnisse. Die Daten werden durch die Regeln geschützt.</p>
+      </div>
+      <div class="card span6" id="localTools">
+        <h3>Lokale Daten</h3>
+        <p class="muted">Backups und Demo-Daten (nur im lokalen Modus).</p>
+        <div class="row">
+          <button class="btn green" type="button" id="demoBtn">🎄 Demo-Daten laden</button>
+          <button class="btn light" type="button" id="exportJsonBtn">⬇️ Backup exportieren</button>
+          <button class="btn light" type="button" id="importJsonBtn">⬆️ Backup importieren</button>
+          <input id="jsonFile" type="file" accept="application/json,.json" class="hidden">
+          <button class="btn" type="button" id="resetAllBtn">🗑️ Alles löschen</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+<footer class="footer">🎄 Winterzauber · <span id="versionText"></span> · Frohe Festtage!</footer>
+</div>
+
+<div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-box">
+    <button class="modal-close" type="button" id="modalClose" aria-label="Schliessen">✕</button>
+    <div class="big" id="modalIcon"></div>
+    <span class="pill" id="modalType"></span>
+    <h2 id="modalTitle"></h2>
+    <p class="quote" id="modalText"></p>
+    <button class="btn green hidden" type="button" id="modalAnswerBtn">Antwort zeigen</button>
+    <div class="answer hidden" id="modalAnswer"></div>
+    <p class="hint" id="modalDate"></p>
+  </div>
+</div>
+<div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+<script type="text/plain" id="firestoreRulesSource">
+rules_version = '2';
+// Winterzauber – Firestore-Regeln. Domain hier UND in CONFIG.allowedEmailDomain anpassen.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower().matches('.*@wavestone[.]com$');
+    }
+    function myEmail() { return request.auth.token.email.lower(); }
+    function isAdmin() { return signedIn() && exists(/databases/$(database)/documents/admins/$(myEmail())); }
+    function str(v, max) { return v is string && v.size() <= max; }
+
+    match /admins/{email} {
+      allow get: if signedIn() && email == myEmail();
+      allow list, write: if false;
+    }
+    match /profiles/{uid} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['nickname', 'quote', 'preferences', 'santaOptIn', 'email', 'updatedAt'])
+        && str(request.resource.data.nickname, 40) && request.resource.data.nickname.size() > 0
+        && str(request.resource.data.quote, 220) && str(request.resource.data.preferences, 300)
+        && request.resource.data.santaOptIn is bool
+        && request.resource.data.email == myEmail();
+      allow delete: if signedIn() && (request.auth.uid == uid || isAdmin());
+    }
+    match /customers/{id} {
+      allow read, delete: if signedIn();
+      allow create, update: if signedIn()
+        && request.resource.data.keys().hasOnly(['customer', 'contact', 'owner', 'status', 'note', 'updatedAt', 'updatedBy'])
+        && str(request.resource.data.customer, 120) && request.resource.data.customer.size() > 0
+        && str(request.resource.data.contact, 120) && str(request.resource.data.owner, 120)
+        && str(request.resource.data.note, 220)
+        && request.resource.data.status in ['Offen', 'In Arbeit', 'Geschrieben', 'Versendet']
+        && request.resource.data.updatedBy == request.auth.uid;
+    }
+    match /calendar/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if signedIn() && request.auth.uid == uid
+        && request.resource.data.opened is list && request.resource.data.opened.size() <= 120;
+    }
+    match /santa/{docId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+    match /santaAssignments/{uid} {
+      allow get: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow list, write: if isAdmin();
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+</script>
+
+<script>
+/* Winterzauber – pure logic (no DOM). Testable in Node. */
+const WZCore = (function () {
+  'use strict';
+  const STATUSES = ['Offen', 'In Arbeit', 'Geschrieben', 'Versendet'];
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  /** 'YYYY-MM-DD' of a Date in a given IANA time zone (falls back to local time). */
+  function dateKeyInZone(date, tz) {
+    try {
+      const parts = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(date);
+      const get = t => (parts.find(p => p.type === t) || {}).value;
+      const y = get('year'), m = get('month'), d = get('day');
+      if (y && m && d) return y + '-' + m + '-' + d;
+    } catch (e) { /* fall through */ }
+    return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
+  }
+
+  function isDayKey(k) { return typeof k === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(k); }
+
+  function keyToUTC(k) { const [y, m, d] = k.split('-').map(Number); return Date.UTC(y, m - 1, d); }
+  function utcToKey(t) { const d = new Date(t); return d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate()); }
+  function addDaysKey(k, n) { return utcToKey(keyToUTC(k) + n * 86400000); }
+
+  function calendarDays(startKey, endKey) {
+    const out = [];
+    if (!isDayKey(startKey) || !isDayKey(endKey) || startKey > endKey) return out;
+    for (let k = startKey; k <= endKey && out.length < 400; k = addDaysKey(k, 1)) out.push(k);
+    return out;
+  }
+
+  function isDoorOpenable(dayKey, todayKey) { return isDayKey(dayKey) && isDayKey(todayKey) && dayKey <= todayKey; }
+  function daysUntil(fromKey, toKey) { return Math.round((keyToUTC(toKey) - keyToUTC(fromKey)) / 86400000); }
+  function formatDayKey(k) { if (!isDayKey(k)) return ''; const [y, m, d] = k.split('-'); return d + '.' + m + '.' + y; }
+
+  const MONTHS = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
+  function monthName(k) { return MONTHS[Number(k.slice(5, 7)) - 1] + ' ' + k.slice(0, 4); }
+
+  function clean(v, n) { return String(v == null ? '' : v).replace(/\s+/g, ' ').trim().slice(0, n || 300); }
+  function cleanMulti(v, n) { return String(v == null ? '' : v).replace(/\r\n/g, '\n').trim().slice(0, n || 300); }
+
+  function normalizeStatus(s) {
+    const x = clean(s, 40).toLowerCase();
+    const hit = STATUSES.find(st => st.toLowerCase() === x);
+    if (hit) return hit;
+    if (['erledigt', 'verschickt', 'sent', 'done'].includes(x)) return 'Versendet';
+    if (['in progress', 'in bearbeitung'].includes(x)) return 'In Arbeit';
+    if (['written', 'fertig'].includes(x)) return 'Geschrieben';
+    return 'Offen';
+  }
+
+  const HEADER_MAP = {
+    customer: ['kunde', 'kunden', 'kundenname', 'customer', 'client', 'firma', 'company', 'organisation', 'name'],
+    contact: ['ansprechpartner', 'ansprechperson', 'kontakt', 'contact', 'kontaktperson', 'empfänger', 'empfaenger'],
+    owner: ['verantwortlich', 'owner', 'zuständig', 'zustaendig', 'schreibt', 'absender'],
+    status: ['status', 'stand'],
+    note: ['notiz', 'notizen', 'note', 'notes', 'bemerkung', 'kommentar']
+  };
+
+  function normalizeCustomerRow(row) {
+    if (!row || typeof row !== 'object') return null;
+    const lower = {};
+    Object.keys(row).forEach(k => { lower[clean(k, 60).toLowerCase()] = row[k]; });
+    const pick = f => { for (const h of HEADER_MAP[f]) if (lower[h] != null && String(lower[h]).trim() !== '') return lower[h]; return ''; };
+    const customer = clean(pick('customer'), 120);
+    if (!customer) return null;
+    return { customer, contact: clean(pick('contact'), 120), owner: clean(pick('owner'), 120), status: normalizeStatus(pick('status')), note: clean(pick('note'), 220) };
+  }
+
+  function dedupeImport(existing, rows) {
+    const key = c => (c.customer + '|' + c.contact).toLowerCase();
+    const seen = new Set((existing || []).map(key));
+    const fresh = [], dupes = [];
+    (rows || []).forEach(r => { if (!r) return; const k = key(r); if (seen.has(k)) dupes.push(r); else { seen.add(k); fresh.push(r); } });
+    return { fresh, dupes };
+  }
+
+  function parseCSV(text) {
+    const s = String(text || '').replace(/^\uFEFF/, '');
+    if (!s.trim()) return [];
+    const firstLine = s.split(/\r?\n/)[0];
+    const sep = (firstLine.match(/;/g) || []).length >= (firstLine.match(/,/g) || []).length && firstLine.includes(';') ? ';' : (firstLine.includes('\t') && !firstLine.includes(',') ? '\t' : ',');
+    const rows = []; let row = [], v = '', q = false;
+    for (let i = 0; i < s.length; i++) {
+      const ch = s[i];
+      if (q) {
+        if (ch === '"' && s[i + 1] === '"') { v += '"'; i++; }
+        else if (ch === '"') q = false;
+        else v += ch;
+      } else if (ch === '"') q = true;
+      else if (ch === sep) { row.push(v); v = ''; }
+      else if (ch === '\n' || ch === '\r') {
+        if (ch === '\r' && s[i + 1] === '\n') i++;
+        row.push(v); v = ''; rows.push(row); row = [];
+      } else v += ch;
+    }
+    if (v !== '' || row.length) { row.push(v); rows.push(row); }
+    const nonEmpty = rows.filter(r => r.some(c => String(c).trim() !== ''));
+    if (!nonEmpty.length) return [];
+    const head = nonEmpty.shift().map(h => String(h).trim());
+    return nonEmpty.map(r => { const o = {}; head.forEach((h, i) => { if (h) o[h] = String(r[i] == null ? '' : r[i]).trim(); }); return o; });
+  }
+
+  function toCSV(customers) {
+    const esc = v => { const s = String(v == null ? '' : v); return /[";\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    const lines = ['Kunde;Ansprechpartner;Verantwortlich;Status;Notiz'];
+    (customers || []).forEach(c => lines.push([c.customer, c.contact, c.owner, c.status, c.note].map(esc).join(';')));
+    return '\uFEFF' + lines.join('\r\n');
+  }
+
+  function progress(customers) {
+    const list = customers || [];
+    const total = list.length;
+    const counts = {}; STATUSES.forEach(s => { counts[s] = 0; });
+    list.forEach(c => { counts[normalizeStatus(c.status)]++; });
+    const done = counts['Versendet'];
+    return { total, done, counts, percent: total ? Math.round(done / total * 100) : 0 };
+  }
+
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function () { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+
+  function shuffle(arr, rng) {
+    const r = rng || Math.random; const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); const t = a[i]; a[i] = a[j]; a[j] = t; }
+    return a;
+  }
+
+  function makeDraw(participants, rng) {
+    const ps = (participants || []).filter(p => p && p.uid);
+    const ids = new Set(ps.map(p => p.uid));
+    if (ids.size !== ps.length) throw new Error('Doppelte Teilnehmende gefunden.');
+    if (ps.length < 3) throw new Error('Für das Wichteln braucht es mindestens 3 Teilnehmende.');
+    const order = shuffle(ps, rng);
+    return order.map((p, i) => {
+      const r = order[(i + 1) % order.length];
+      return { giverUid: p.uid, giverNickname: p.nickname || '', receiverUid: r.uid, receiverNickname: r.nickname || '', receiverPreferences: r.preferences || '', receiverQuote: r.quote || '' };
+    });
+  }
+
+  function isAllowedEmail(email, domain) {
+    const e = String(email || '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) return false;
+    if (!domain) return true;
+    return e.endsWith('@' + String(domain).toLowerCase());
+  }
+
+  function dayOfYearIndex(k) { return Math.round((keyToUTC(k) - Date.UTC(Number(k.slice(0, 4)), 0, 1)) / 86400000); }
+
+  function sha256Hex(str) {
+    const bytes = Array.from(unescape(encodeURIComponent(String(str))), c => c.charCodeAt(0));
+    const K = [0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da, 0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967, 0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85, 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070, 0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3, 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];
+    let H = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+    const l = bytes.length * 8;
+    bytes.push(0x80);
+    while (bytes.length % 64 !== 56) bytes.push(0);
+    const hi = Math.floor(l / 4294967296), lo = l >>> 0;
+    bytes.push((hi >>> 24) & 255, (hi >>> 16) & 255, (hi >>> 8) & 255, hi & 255, (lo >>> 24) & 255, (lo >>> 16) & 255, (lo >>> 8) & 255, lo & 255);
+    const rotr = (x, n) => (x >>> n) | (x << (32 - n));
+    const W = new Array(64);
+    for (let i = 0; i < bytes.length; i += 64) {
+      for (let t = 0; t < 16; t++) W[t] = (bytes[i + 4 * t] << 24) | (bytes[i + 4 * t + 1] << 16) | (bytes[i + 4 * t + 2] << 8) | bytes[i + 4 * t + 3];
+      for (let t = 16; t < 64; t++) {
+        const s0 = rotr(W[t - 15], 7) ^ rotr(W[t - 15], 18) ^ (W[t - 15] >>> 3);
+        const s1 = rotr(W[t - 2], 17) ^ rotr(W[t - 2], 19) ^ (W[t - 2] >>> 10);
+        W[t] = (W[t - 16] + s0 + W[t - 7] + s1) | 0;
+      }
+      let [a, b, c, d, e, f, g, h] = H;
+      for (let t = 0; t < 64; t++) {
+        const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25), ch = (e & f) ^ (~e & g);
+        const t1 = (h + S1 + ch + K[t] + W[t]) | 0;
+        const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22), maj = (a & b) ^ (a & c) ^ (b & c);
+        const t2 = (S0 + maj) | 0;
+        h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
+      }
+      H = [H[0] + a, H[1] + b, H[2] + c, H[3] + d, H[4] + e, H[5] + f, H[6] + g, H[7] + h].map(x => x | 0);
+    }
+    return H.map(x => (x >>> 0).toString(16).padStart(8, '0')).join('');
+  }
+
+  const CHALLENGES = [
+    'Teile dein Lieblings-Weihnachtslied im Team-Chat – und verrate, warum.',
+    'Mach eine echte 5-Minuten-Guetzli-Pause. Ohne Bildschirm.',
+    'Schreib heute eine Kundenkarte fertig. Eine reicht – Hauptsache persönlich.',
+    'Schick jemandem ausserhalb des Teams eine kurze Dankesnachricht.',
+    'Winter-Foto-Challenge: Fotografiere heute etwas, das nach Winter aussieht.',
+    'Desk-Deko-Challenge: Ein weihnachtliches Detail an deinen Arbeitsplatz.',
+    'Erzähl im nächsten Meeting eine lustige Dezember-Anekdote.',
+    'Geh 10 Minuten an die frische Luft – Zürich im Winterlicht lohnt sich.',
+    'Teile ein Familienrezept für Guetzli oder Festtagsessen.',
+    'Lobe einen stillen Beitrag, der sonst untergehen würde.',
+    'Stell deinen Bildschirmhintergrund auf etwas Weihnachtliches um.',
+    'Starte ein Meeting mit der Frage: «Was ist deine liebste Wintertradition?»',
+    'Empfiehl dem Team deinen liebsten Weihnachtsfilm.',
+    'Melde dich bei einer ehemaligen Kollegin oder einem ehemaligen Kollegen.',
+    'Teile dein persönliches Jahreshighlight 2026.',
+    'Hilf heute jemandem ungefragt bei einer kleinen Aufgabe.',
+    'Ugly-Sweater-Tag! Wer traut sich?',
+    'Bring etwas Süsses fürs Team mit.',
+    'Schreib eine handgeschriebene Notiz – an wen auch immer.',
+    'Ergänze die Team-Weihnachtsplaylist um einen Song.',
+    '15 Minuten Inbox-Weihnachtsputz: Archivieren, was erledigt ist.',
+    'Lerne «Frohe Weihnachten» in einer neuen Sprache.',
+    'Aktualisiere deine Wichtel-Präferenzen im Profil – dein Wichtel wird es dir danken.',
+    'Mach heute jemandem ein ehrliches Kompliment.',
+    'Frag eine Kollegin oder einen Kollegen nach der liebsten Feiertagstradition.',
+    'Verabrede dich zu einem gemeinsamen Mittagessen.',
+    'Reflexion: Worauf bist du dieses Jahr besonders stolz?',
+    'Formuliere einen kleinen, realistischen Vorsatz für 2027.',
+    'Übernimm heute eine Karte von jemandem, der viel um die Ohren hat.',
+    'Schreib drei Dinge auf, für die du dieses Jahr dankbar bist.',
+    'Teile ein Bild deines liebsten Weihnachtsmarkts.'
+  ];
+  const QUIZ = [
+    ['Wie viele Rentiere ziehen traditionell den Schlitten – ohne Rudolph?', '8 – Dasher, Dancer, Prancer, Vixen, Comet, Cupid, Donner und Blitzen.'],
+    ['Wie heisst das Rentier mit der leuchtend roten Nase?', 'Rudolph.'],
+    ['Was feiert man in der Schweiz am 6. Dezember?', 'Den Samichlaus-Tag.'],
+    ['Wie heisst der Begleiter des Samichlaus?', 'Schmutzli.'],
+    ['Aus welchem Land stammt das Lied «Stille Nacht»?', 'Aus Österreich (Oberndorf bei Salzburg, 1818).'],
+    ['Was bedeutet das Wort «Advent»?', 'Ankunft (lateinisch «adventus»).'],
+    ['Wie viele Kerzen hat ein klassischer Adventskranz?', 'Vier.'],
+    ['Welches Land schenkt London jedes Jahr den Weihnachtsbaum am Trafalgar Square?', 'Norwegen.'],
+    ['Wie heisst der Hund des Grinch?', 'Max.'],
+    ['Wie heisst der Schneemann in «Die Eiskönigin»?', 'Olaf.'],
+    ['Wer komponierte das Ballett «Der Nussknacker»?', 'Pjotr Iljitsch Tschaikowsky.'],
+    ['Wie heisst der Geizhals in Charles Dickens’ «A Christmas Carol»?', 'Ebenezer Scrooge.'],
+    ['Wie viele Weihnachtsgeister besuchen Scrooge – ohne Marley?', 'Drei.'],
+    ['Wie heissen die Heiligen Drei Könige traditionell?', 'Caspar, Melchior und Balthasar.'],
+    ['Was ist ein «Grittibänz»?', 'Ein Hefeteig-Männchen, das man in der Schweiz rund um den Samichlaus isst.'],
+    ['In welchem Ort findet das berühmte «Chlausjagen» statt?', 'In Küssnacht am Rigi.'],
+    ['Wie viele Zacken hat ein klassischer Zimtstern?', 'Fünf.'],
+    ['Nach welcher Stadt sind die Mailänderli benannt?', 'Nach Mailand.'],
+    ['Wann ist auf der Nordhalbkugel die längste Nacht des Jahres?', 'Rund um den 21. Dezember – zur Wintersonnenwende.'],
+    ['Welche finnische Stadt gilt als Heimat des Weihnachtsmanns?', 'Rovaniemi.'],
+    ['Was ist im Schweizer Dreikönigskuchen versteckt?', 'Eine kleine Königsfigur – wer sie findet, ist König für einen Tag.'],
+    ['An welchem Datum ist Dreikönigstag?', 'Am 6. Januar.'],
+    ['Welche Stadt ist für ihren «Christkindlesmarkt» berühmt?', 'Nürnberg.'],
+    ['Welche Pflanze mit roten Hochblättern heisst auch «Weihnachtsstern»?', 'Die Poinsettie.'],
+    ['Wie heissen die bekannten Basler Honig-Mandel-Guetzli?', 'Basler Läckerli.'],
+    ['In welcher Region spielt «Kevin – Allein zu Haus»?', 'Im Grossraum Chicago.'],
+    ['Wie viele Tage umfassen die «Twelve Days of Christmas»?', 'Zwölf – vom 25. Dezember bis zum 5. Januar.'],
+    ['Welche Farbe hat der Mantel des Samichlaus?', 'Rot.'],
+    ['Emoji-Rätsel: 🎅 + 🛷 + 🦌🦌🦌 = ?', 'Der Weihnachtsschlitten auf seiner Tour!'],
+    ['Emoji-Rätsel: ⭐ + 🍪 + 🟤 (Zimt) = ?', 'Zimtstern!'],
+    ['Emoji-Rätsel: 🌲 + 💡💡💡 = ?', 'Ein geschmückter Weihnachtsbaum.']
+  ];
+  const INSPIRATIONS = [
+    'Weihnachten beginnt dort, wo sich jemand Zeit für einen anderen nimmt.',
+    'Kleine Gesten machen den Dezember besonders.',
+    'Ein ehrliches Dankeschön ist oft das schönste Geschenk.',
+    'Gemeinsame Erinnerungen sind nachhaltiger als perfekte Pläne.',
+    'Heute jemandem den Arbeitsalltag ein wenig leichter machen.',
+    'Wer Licht teilt, hat am Ende nicht weniger davon.',
+    'Die beste Zeit für Wertschätzung ist jetzt.',
+    'Nicht jeder Tag ist festlich – aber in jedem steckt ein kleiner Lichtblick.',
+    'Gute Zusammenarbeit fühlt sich manchmal an wie ein warmer Tee an einem kalten Tag.',
+    'Ein persönlicher Satz auf einer Karte wirkt länger als jedes Logo.',
+    'Ruhe ist kein Luxus, sondern eine Investition.',
+    'Ein Team ist so warm wie der Umgang miteinander.',
+    'Manchmal ist Zuhören das grösste Geschenk.',
+    'Freude wächst, wenn man sie verschenkt.',
+    'Wer langsamer wird, sieht mehr Lichter.',
+    'Dankbarkeit macht aus genug ein Fest.',
+    'Jede Karte ist ein kleines «Ich habe an dich gedacht».',
+    'Grosse Projekte, kleine Pausen – beides gehört dazu.',
+    'Im Dezember zählt, wer da war – nicht, was perfekt war.',
+    'Ein Lächeln im Flur ist die kürzeste Weihnachtsfeier.',
+    'Das Jahr war voll. Jetzt darf es auch warm werden.',
+    'Neugier und Gelassenheit sind gute Wegbegleiter in den Winter.',
+    'Was wir teilen, verdoppelt sich: Wissen, Zeit und Guetzli.',
+    'Schnee macht leise. Vielleicht dürfen wir das auch ab und zu.',
+    'Wertschätzung kostet nichts und ist trotzdem unbezahlbar.',
+    'Feiern heisst auch: innehalten und sehen, was gelungen ist.',
+    'Die schönste Tradition ist die, die man gemeinsam erfindet.',
+    'Ein guter Abschluss ist der beste Start ins neue Jahr.',
+    'Licht im Fenster, Licht im Team.',
+    'Ein kleines Danke heute kann das Highlight von morgen sein.'
+  ];
+  const SPECIALS = {
+    '2026-10-01': { type: 'Start', icon: '🎬', title: 'Der Countdown beginnt!', text: 'Willkommen im Winterzauber-Kalender. Ab heute gibt es jeden Tag ein neues Türchen – mit Inspiration, Quiz oder Challenge. Erste Challenge: Erstelle dein Profil.' },
+    '2026-11-01': { type: 'Meilenstein', icon: '📮', title: 'Kartensaison eröffnet', text: 'Ab heute gilt: Jede Woche ein paar Kundenkarten. Wer früh startet, schreibt persönlicher.' },
+    '2026-12-01': { type: 'Meilenstein', icon: '🕯️', title: 'Willkommen im Dezember', text: 'Jetzt wird es ernst gemütlich. Plane dir diese Woche bewusst eine kleine Auszeit ein.' },
+    '2026-12-06': { type: 'Samichlaus', icon: '🎅', title: 'Samichlaus-Tag!', text: 'Heute gibt es Nüssli, Mandarinen und Grittibänz. Wer bringt etwas fürs Team mit?' },
+    '2026-12-24': { type: 'Heiligabend', icon: '🌟', title: 'Frohe Weihnachten!', text: 'Danke für dieses Jahr, euren Einsatz und eure Wärme im Team. Schalte heute ab und geniesse die Zeit mit deinen Liebsten.' },
+    '2026-12-25': { type: 'Weihnachten', icon: '🎄', title: 'Schöne Feiertage', text: 'Heute gilt nur eine Challenge: Laptop zu lassen.' },
+    '2026-12-31': { type: 'Silvester', icon: '🎆', title: 'Auf ein gutes 2027!', text: 'Was nimmst du aus 2026 mit? Was lässt du hier? Guten Rutsch!' }
+  };
+
+  function adventContent(dayKey, index) {
+    if (SPECIALS[dayKey]) return Object.assign({ day: dayKey }, SPECIALS[dayKey]);
+    const i = Math.max(0, index | 0), slot = Math.floor(i / 3);
+    const kind = i % 3;
+    if (kind === 0) return { day: dayKey, type: 'Inspiration', icon: '✨', title: 'Gedanke des Tages', text: INSPIRATIONS[slot % INSPIRATIONS.length] };
+    if (kind === 1) { const q = QUIZ[slot % QUIZ.length]; return { day: dayKey, type: 'Quiz', icon: '❓', title: 'Weihnachtsquiz', text: q[0], answer: q[1] }; }
+    return { day: dayKey, type: 'Challenge', icon: '🎯', title: 'Challenge des Tages', text: CHALLENGES[slot % CHALLENGES.length] };
+  }
+
+  function dailyInspiration(dayKey) { return INSPIRATIONS[dayOfYearIndex(dayKey) % INSPIRATIONS.length]; }
+
+  const CARD_TEXTS = [
+    'Herzlichen Dank für die vertrauensvolle Zusammenarbeit in diesem Jahr. Wir wünschen Ihnen und Ihrem Team besinnliche Festtage und einen guten Start ins neue Jahr.',
+    'Gemeinsam haben wir 2026 viel bewegt. Danke für Ihr Vertrauen – wir freuen uns auf die nächsten Schritte im neuen Jahr. Frohe Weihnachten!',
+    'Ein Jahr voller spannender Herausforderungen geht zu Ende. Danke, dass wir sie mit Ihnen angehen durften. Erholsame Feiertage!',
+    'Zum Jahresende sagen wir einfach: Danke. Für die Offenheit, den Austausch und die gute Zusammenarbeit. Alles Gute für 2027!',
+    'Wir wünschen Ihnen ruhige Tage, Zeit für das Wesentliche und einen schwungvollen Start ins neue Jahr.',
+    'Persönlicher Tipp: Ergänze einen konkreten Moment aus dem Projekt – z. B. «Der Workshop im Mai bleibt uns in bester Erinnerung.»'
+  ];
+
+  return {
+    STATUSES, CARD_TEXTS, INSPIRATIONS, QUIZ, CHALLENGES, pad, dateKeyInZone, isDayKey, addDaysKey, calendarDays, isDoorOpenable, daysUntil,
+    formatDayKey, monthName, clean, cleanMulti, normalizeStatus, normalizeCustomerRow, dedupeImport, parseCSV, toCSV, progress,
+    mulberry32, shuffle, makeDraw, isAllowedEmail, sha256Hex, adventContent, dailyInspiration
+  };
+})();
+if (typeof module !== 'undefined' && module.exports) module.exports = WZCore;
+
+</script>
+<script>
+'use strict';
+/* ======================= CONFIG ======================= */
+const CONFIG = {
+  version: '0.3.0',
+  // 'auto' = Firebase on *.web.app / *.firebaseapp.com or when firebaseConfig.apiKey is set, otherwise local mode.
+  mode: 'auto',
+  firebaseSdkVersion: '12.19.0',
+  // Optional. Leave empty on Firebase Hosting: config is then loaded from /__/firebase/init.json automatically.
+  // >>> FÜR DEN TEAM-BETRIEB HIER EINTRAGEN (Firebase → Projekteinstellungen → Web-App). Leer = lokaler Modus.
+  firebaseConfig: { apiKey: '', authDomain: '', projectId: '', appId: '' },
+  allowedEmailDomain: 'wavestone.com',
+  // Local mode only (NOT real security): SHA-256 of the password "Winterzauber2026".
+  localPasswordSha256: '3c52f514e0c57daf997b4936efe076c0510cd8d5007139cdb4e18c9c089f7ff6',
+  timeZone: 'Europe/Zurich',
+  calendarStart: '2026-10-01',
+  calendarEnd: '2026-12-31',
+  christmasEve: '2026-12-24',
+  storageKey: 'winterzauber-v2',
+  legacyStorageKey: 'winterzauber-v1',
+  features: { snow: true, sleigh: true },
+  snowflakes: 36,
+  maxCustomers: 2000,
+  maxImportBytes: 10 * 1024 * 1024
+};
+
+/* ======================= SAFETY NET ======================= */
+window.WZ_ERRORS = [];
+window.addEventListener('error', e => { window.WZ_ERRORS.push(String((e && e.message) || e)); });
+window.addEventListener('unhandledrejection', e => { const r = e && e.reason; window.WZ_ERRORS.push(String((r && r.message) || r)); });
+
+const C = WZCore;
+const $ = id => document.getElementById(id);
+const Safe = {
+  get(k, area) { try { return window[(area || 'local') + 'Storage'].getItem(k); } catch (e) { return null; } },
+  set(k, v, area) { try { window[(area || 'local') + 'Storage'].setItem(k, v); return true; } catch (e) { return false; } },
+  del(k, area) { try { window[(area || 'local') + 'Storage'].removeItem(k); } catch (e) { /* ignore */ } }
+};
+const reducedMotion = (() => { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return false; } })();
+
+function h(tag, attrs, ...kids) {
+  const el = document.createElement(tag);
+  if (attrs) Object.keys(attrs).forEach(k => {
+    const v = attrs[k];
+    if (v == null || v === false) return;
+    if (k === 'class') el.className = v;
+    else if (k === 'text') el.textContent = v;
+    else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2), v);
+    else if (k in el && typeof v !== 'string') el[k] = v;
+    else el.setAttribute(k, v === true ? '' : v);
+  });
+  kids.flat().forEach(c => { if (c == null || c === false) return; el.appendChild(typeof c === 'string' || typeof c === 'number' ? document.createTextNode(String(c)) : c); });
+  return el;
+}
+function errMsg(e) {
+  const code = e && e.code;
+  const map = {
+    'auth/invalid-credential': 'E-Mail oder Passwort ist falsch.', 'auth/wrong-password': 'E-Mail oder Passwort ist falsch.', 'auth/user-not-found': 'E-Mail oder Passwort ist falsch.',
+    'auth/invalid-email': 'Bitte eine gültige E-Mail-Adresse eingeben.', 'auth/email-already-in-use': 'Für diese E-Mail gibt es bereits ein Konto. Bitte anmelden.',
+    'auth/weak-password': 'Das Passwort ist zu schwach (mindestens 8 Zeichen).', 'auth/too-many-requests': 'Zu viele Versuche. Bitte kurz warten.',
+    'auth/network-request-failed': 'Keine Verbindung. Bitte Internet prüfen.', 'permission-denied': 'Keine Berechtigung. Ist deine E-Mail bestätigt?',
+    'unavailable': 'Server gerade nicht erreichbar – Änderungen werden nachgeholt.'
+  };
+  return map[code] || (e && e.message) || String(e);
+}
+let toastTimer = null;
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.remove('hidden'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.add('hidden'), 3200); }
+function todayKey() { return (typeof window.__WZ_TODAY__ === 'string' && C.isDayKey(window.__WZ_TODAY__)) ? window.__WZ_TODAY__ : C.dateKeyInZone(new Date(), CONFIG.timeZone); }
+function downloadText(name, text, type) {
+  try { const a = h('a', { download: name }); a.href = URL.createObjectURL(new Blob([text], { type })); document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
+  catch (e) { toast('Download nicht möglich: ' + errMsg(e)); }
+}
+function newLocalId() { return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+
+function sanitizeProfile(p, email) {
+  return { nickname: C.clean(p.nickname, 40), quote: C.cleanMulti(p.quote, 220), preferences: C.cleanMulti(p.preferences, 300), santaOptIn: p.santaOptIn !== false, email: C.clean(email != null ? email : p.email, 120).toLowerCase() };
+}
+function sanitizeCustomer(c) {
+  return { customer: C.clean(c.customer, 120), contact: C.clean(c.contact, 120), owner: C.clean(c.owner, 120), status: C.normalizeStatus(c.status), note: C.clean(c.note, 220) };
+}
+
+/* ======================= LOCAL STORE ======================= */
+function LocalStore() {
+  const LOCAL_USER = { uid: 'local', email: 'lokal@demo', verified: true };
+  let authCb = () => {}, listener = null, sessionOk = Safe.get('wz-session', 'session') === 'ok', fails = 0, lockedUntil = 0;
+  const empty = () => ({ schema: 2, profiles: {}, customers: [], santa: { config: { budget: '25 CHF', date: '', drawnAt: null }, assignments: {} }, calendar: {} });
+
+  function validate(x) {
+    if (!x || typeof x !== 'object') return null;
+    const d = empty();
+    if (x.profiles && typeof x.profiles === 'object' && !Array.isArray(x.profiles)) Object.keys(x.profiles).forEach(uid => { const p = x.profiles[uid]; if (p && typeof p === 'object' && C.clean(p.nickname)) d.profiles[C.clean(uid, 60)] = sanitizeProfile(p); });
+    if (Array.isArray(x.customers)) x.customers.slice(0, CONFIG.maxCustomers).forEach(c => { if (c && typeof c === 'object' && C.clean(c.customer)) d.customers.push(Object.assign({ id: C.clean(c.id, 60) || newLocalId() }, sanitizeCustomer(c))); });
+    const s = x.santa || {};
+    if (s.config && typeof s.config === 'object') d.santa.config = { budget: C.clean(s.config.budget, 30), date: C.isDayKey(s.config.date) ? s.config.date : '', drawnAt: typeof s.config.drawnAt === 'number' ? s.config.drawnAt : null };
+    if (s.assignments && typeof s.assignments === 'object') Object.keys(s.assignments).forEach(g => { const a = s.assignments[g]; if (a && a.receiverUid) d.santa.assignments[g] = { giverUid: g, giverNickname: C.clean(a.giverNickname, 40), receiverUid: C.clean(a.receiverUid, 60), receiverNickname: C.clean(a.receiverNickname, 40), receiverPreferences: C.cleanMulti(a.receiverPreferences, 300), receiverQuote: C.cleanMulti(a.receiverQuote, 220) }; });
+    if (x.calendar && typeof x.calendar === 'object') Object.keys(x.calendar).forEach(uid => { const o = x.calendar[uid]; if (o && Array.isArray(o.opened)) d.calendar[uid] = { opened: o.opened.filter(C.isDayKey).slice(0, 120) }; });
+    return d;
+  }
+  function migrateV1(x) {
+    if (!x || typeof x !== 'object') return null;
+    const d = empty();
+    const meId = x.profile && x.profile.id;
+    (Array.isArray(x.profiles) ? x.profiles : []).forEach(p => { if (p && C.clean(p.nickname)) d.profiles[p.id === meId ? 'local' : C.clean(p.id, 60) || newLocalId()] = sanitizeProfile({ nickname: p.nickname, quote: p.quote, preferences: p.preferences, santaOptIn: true, email: p.email }); });
+    (Array.isArray(x.customers) ? x.customers : []).forEach(c => { if (c && C.clean(c.customer)) d.customers.push(Object.assign({ id: C.clean(c.id, 60) || newLocalId() }, sanitizeCustomer(c))); });
+    if (x.settings) { d.santa.config.budget = C.clean(x.settings.budget, 30) || '25 CHF'; d.santa.config.date = C.isDayKey(x.settings.date) ? x.settings.date : ''; }
+    return d;
+  }
+  function load() {
+    const raw = Safe.get(CONFIG.storageKey);
+    if (raw) { try { const v = validate(JSON.parse(raw)); if (v) return v; } catch (e) { /* corrupted */ } }
+    const old = Safe.get(CONFIG.legacyStorageKey);
+    if (old) { try { const v = migrateV1(JSON.parse(old)); if (v) return v; } catch (e) { /* ignore */ } }
+    return empty();
+  }
+  let data = load();
+  function persist() {
+    if (!Safe.set(CONFIG.storageKey, JSON.stringify(data))) throw new Error('Speichern im Browser nicht möglich (Speicher blockiert oder voll).');
+    emit();
+  }
+  function emit() { if (listener) listener(); }
+  window.addEventListener('storage', e => { if (e.key === CONFIG.storageKey) { data = load(); emit(); } });
+  const copy = x => JSON.parse(JSON.stringify(x));
+  const run = fn => new Promise((res, rej) => { try { fn(); res(); } catch (e) { rej(e); } });
+
+  return {
+    kind: 'local',
+    onAuth(cb) { authCb = cb; cb(sessionOk ? LOCAL_USER : null); },
+    async login(email, pw) {
+      if (Date.now() < lockedUntil) throw new Error('Zu viele Versuche. Bitte ' + Math.ceil((lockedUntil - Date.now()) / 1000) + ' Sekunden warten.');
+      if (C.sha256Hex(String(pw || '')) !== CONFIG.localPasswordSha256) { fails++; if (fails >= 5) { lockedUntil = Date.now() + 30000; fails = 0; } throw new Error('Falsches Passwort.'); }
+      fails = 0; sessionOk = true; Safe.set('wz-session', 'ok', 'session'); authCb(LOCAL_USER);
+    },
+    async logout() { listener = null; sessionOk = false; Safe.del('wz-session', 'session'); authCb(null); },
+    async checkAdmin() { return true; },
+    subscribe(uid, isAdmin, hd) {
+      listener = () => {
+        hd.profiles(Object.keys(data.profiles).map(k => Object.assign({ uid: k }, copy(data.profiles[k]))));
+        hd.customers(copy(data.customers));
+        hd.santaConfig(copy(data.santa.config));
+        hd.myAssignment(data.santa.assignments[uid] ? copy(data.santa.assignments[uid]) : null);
+        hd.allAssignments(Object.values(copy(data.santa.assignments)));
+        hd.calendar((data.calendar[uid] || { opened: [] }).opened.slice());
+      };
+      listener();
+      return () => { listener = null; };
+    },
+    saveProfile: (uid, p) => run(() => { data.profiles[uid] = sanitizeProfile(p); persist(); }),
+    deleteProfile: uid => run(() => { delete data.profiles[uid]; persist(); }),
+    newCustomerId: () => newLocalId(),
+    createCustomer: (id, c) => run(() => { if (data.customers.length >= CONFIG.maxCustomers) throw new Error('Maximal ' + CONFIG.maxCustomers + ' Kunden.'); data.customers.push(Object.assign({ id }, sanitizeCustomer(c))); persist(); }),
+    updateCustomerField: (id, field, value) => run(() => { const c = data.customers.find(x => x.id === id); if (!c) throw new Error('Kunde nicht mehr vorhanden.'); Object.assign(c, sanitizeCustomer(Object.assign({}, c, { [field]: value }))); persist(); }),
+    deleteCustomer: id => run(() => { data.customers = data.customers.filter(x => x.id !== id); persist(); }),
+    addCustomers: list => run(() => { const room = CONFIG.maxCustomers - data.customers.length; if (list.length > room) throw new Error('Maximal ' + CONFIG.maxCustomers + ' Kunden.'); list.forEach(c => data.customers.push(Object.assign({ id: newLocalId() }, sanitizeCustomer(c)))); persist(); }),
+    saveCalendar: (uid, opened) => run(() => { data.calendar[uid] = { opened: opened.filter(C.isDayKey).slice(0, 120) }; persist(); }),
+    saveSantaConfig: cfg => run(() => { data.santa.config = Object.assign({}, data.santa.config, { budget: C.clean(cfg.budget, 30), date: C.isDayKey(cfg.date) ? cfg.date : '' }); persist(); }),
+    writeDraw: (assignments, cfg) => run(() => { data.santa.assignments = {}; assignments.forEach(a => { data.santa.assignments[a.giverUid] = a; }); data.santa.config = Object.assign({}, data.santa.config, { budget: C.clean(cfg.budget, 30), date: C.isDayKey(cfg.date) ? cfg.date : '', drawnAt: Date.now() }); persist(); }),
+    resetDraw: () => run(() => { data.santa.assignments = {}; data.santa.config.drawnAt = null; persist(); }),
+    exportData: () => JSON.stringify(data, null, 2),
+    importData: text => run(() => { const v = validate(JSON.parse(text)); if (!v || (!Object.keys(v.profiles).length && !v.customers.length)) throw new Error('Ungültiges oder leeres Backup.'); data = v; persist(); }),
+    resetAll: () => run(() => { data = empty(); persist(); }),
+    loadDemo: () => run(() => {
+      data.profiles = Object.assign({}, data.profiles, {
+        'demo-1': sanitizeProfile({ nickname: 'Tannenbaum', quote: 'Gemeinsame Zeit zählt.', preferences: 'Kochen, Schokolade, keine Kerzen' }),
+        'demo-2': sanitizeProfile({ nickname: 'Zimtstern', quote: 'Freude teilen.', preferences: 'Musik, Tee, Bücher' }),
+        'demo-3': sanitizeProfile({ nickname: 'Schneeflocke', quote: 'Kleine Gesten, grosse Wirkung.', preferences: 'Kaffee, Wandern' })
+      });
+      if (!data.profiles.local) data.profiles.local = sanitizeProfile({ nickname: 'Rentier', quote: 'Ho ho ho!', preferences: 'Überraschungen' });
+      const me = data.profiles.local.nickname;
+      [['Musterkunde Nord AG', 'Anna Beispiel', me, 'In Arbeit', 'Persönlicher Dank für Projekt X'], ['Musterkunde Süd', 'Max Muster', 'Tannenbaum', 'Versendet', ''], ['Stadt Musterhausen', 'Dr. Eva Probe', me, 'Offen', 'Auf Deutsch, förmlich'], ['Kanton Beispiel', 'Leo Test', 'Zimtstern', 'Geschrieben', ''], ['Verband Muster', 'Mia Demo', '', 'Offen', '']]
+        .forEach(r => data.customers.push(Object.assign({ id: newLocalId() }, sanitizeCustomer({ customer: r[0], contact: r[1], owner: r[2], status: r[3], note: r[4] }))));
+      persist();
+    })
+  };
+}
+
+/* ======================= FIREBASE STORE ======================= */
+async function loadFirebase() {
+  if (window.__WZ_FAKE_FB__) return window.__WZ_FAKE_FB__;
+  const base = 'https://www.gstatic.com/firebasejs/' + CONFIG.firebaseSdkVersion + '/';
+  const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('Firebase lädt nicht (Zeitüberschreitung).')), 20000));
+  const mods = await Promise.race([Promise.all([import(base + 'firebase-app.js'), import(base + 'firebase-auth.js'), import(base + 'firebase-firestore.js')]), timeout]);
+  return Object.assign({}, mods[0], mods[1], mods[2]);
+}
+async function firebaseConfig(fb) {
+  if (fb && fb.__config) return fb.__config;
+  if (CONFIG.firebaseConfig.apiKey) return CONFIG.firebaseConfig;
+  const r = await fetch('/__/firebase/init.json', { cache: 'no-store' });
+  if (!r.ok) throw new Error('Firebase-Konfiguration nicht gefunden. Bitte firebaseConfig in CONFIG eintragen.');
+  return r.json();
+}
+function FirebaseStore(fb, cfg) {
+  const app = fb.initializeApp(cfg);
+  const auth = fb.getAuth(app);
+  const db = fb.getFirestore(app);
+  let unsubs = [];
+  const toUser = u => u ? { uid: u.uid, email: String(u.email || '').toLowerCase(), verified: !!u.emailVerified } : null;
+  const stop = () => { unsubs.forEach(f => { try { f(); } catch (e) { /* ignore */ } }); unsubs = []; };
+  const ts = () => fb.serverTimestamp();
+  return {
+    kind: 'firebase',
+    onAuth(cb) { fb.onAuthStateChanged(auth, u => cb(toUser(u))); },
+    async login(email, pw) { await fb.signInWithEmailAndPassword(auth, email, pw); },
+    async register(email, pw) { const cred = await fb.createUserWithEmailAndPassword(auth, email, pw); await fb.sendEmailVerification(cred.user); },
+    async resendVerification() { if (auth.currentUser) await fb.sendEmailVerification(auth.currentUser); },
+    async reloadUser() { const u = auth.currentUser; if (!u) return null; await fb.reload(u); await u.getIdToken(true); return toUser(auth.currentUser); },
+    async resetPassword(email) { await fb.sendPasswordResetEmail(auth, email); },
+    async logout() { stop(); await fb.signOut(auth); },
+    async checkAdmin(email) { try { const s = await fb.getDoc(fb.doc(db, 'admins', email)); return s.exists(); } catch (e) { return false; } },
+    subscribe(uid, isAdmin, hd) {
+      stop();
+      const err = e => hd.error(e);
+      unsubs.push(fb.onSnapshot(fb.collection(db, 'profiles'), s => hd.profiles(s.docs.map(d => Object.assign({ uid: d.id }, d.data()))), err));
+      unsubs.push(fb.onSnapshot(fb.collection(db, 'customers'), s => hd.customers(s.docs.map(d => Object.assign({ id: d.id }, sanitizeCustomer(d.data())))), err));
+      unsubs.push(fb.onSnapshot(fb.doc(db, 'santa', 'config'), s => { const d = s.exists() ? s.data() : {}; hd.santaConfig({ budget: d.budget || '', date: d.date || '', drawnAt: d.drawnAt && d.drawnAt.toMillis ? d.drawnAt.toMillis() : (typeof d.drawnAt === 'number' ? d.drawnAt : null) }); }, err));
+      unsubs.push(fb.onSnapshot(fb.doc(db, 'santaAssignments', uid), s => hd.myAssignment(s.exists() ? s.data() : null), err));
+      unsubs.push(fb.onSnapshot(fb.doc(db, 'calendar', uid), s => hd.calendar(s.exists() && Array.isArray(s.data().opened) ? s.data().opened.filter(C.isDayKey) : []), err));
+      if (isAdmin) unsubs.push(fb.onSnapshot(fb.collection(db, 'santaAssignments'), s => hd.allAssignments(s.docs.map(d => d.data())), err));
+      else hd.allAssignments([]);
+      return stop;
+    },
+    saveProfile: (uid, p) => fb.setDoc(fb.doc(db, 'profiles', uid), Object.assign(sanitizeProfile(p, auth.currentUser && auth.currentUser.email), { updatedAt: ts() })),
+    deleteProfile: uid => fb.deleteDoc(fb.doc(db, 'profiles', uid)),
+    newCustomerId: () => fb.doc(fb.collection(db, 'customers')).id,
+    createCustomer: (id, c) => fb.setDoc(fb.doc(db, 'customers', id), Object.assign(sanitizeCustomer(c), { updatedAt: ts(), updatedBy: auth.currentUser.uid })),
+    updateCustomerField: (id, field, value) => { const clean = sanitizeCustomer({ customer: 'x', [field]: value })[field]; return fb.setDoc(fb.doc(db, 'customers', id), { [field]: clean, updatedAt: ts(), updatedBy: auth.currentUser.uid }, { merge: true }); },
+    deleteCustomer: id => fb.deleteDoc(fb.doc(db, 'customers', id)),
+    async addCustomers(list) {
+      for (let i = 0; i < list.length; i += 400) {
+        const b = fb.writeBatch(db);
+        list.slice(i, i + 400).forEach(c => b.set(fb.doc(fb.collection(db, 'customers')), Object.assign(sanitizeCustomer(c), { updatedAt: ts(), updatedBy: auth.currentUser.uid })));
+        await b.commit();
+      }
+    },
+    saveCalendar: (uid, opened) => fb.setDoc(fb.doc(db, 'calendar', uid), { opened: opened.filter(C.isDayKey).slice(0, 120), updatedAt: ts() }),
+    saveSantaConfig: cfg => fb.setDoc(fb.doc(db, 'santa', 'config'), { budget: C.clean(cfg.budget, 30), date: C.isDayKey(cfg.date) ? cfg.date : '' }, { merge: true }),
+    async writeDraw(assignments, cfg) {
+      const old = await fb.getDocs(fb.collection(db, 'santaAssignments'));
+      const b = fb.writeBatch(db);
+      old.docs.forEach(d => b.delete(d.ref));
+      assignments.forEach(a => b.set(fb.doc(db, 'santaAssignments', a.giverUid), a));
+      b.set(fb.doc(db, 'santa', 'config'), { budget: C.clean(cfg.budget, 30), date: C.isDayKey(cfg.date) ? cfg.date : '', drawnAt: ts() }, { merge: true });
+      await b.commit();
+    },
+    async resetDraw() {
+      const old = await fb.getDocs(fb.collection(db, 'santaAssignments'));
+      const b = fb.writeBatch(db);
+      old.docs.forEach(d => b.delete(d.ref));
+      b.set(fb.doc(db, 'santa', 'config'), { drawnAt: null }, { merge: true });
+      await b.commit();
+    }
+  };
+}
+
+/* ======================= APP STATE ======================= */
+const S = {
+  store: null, mode: 'local', user: null, isAdmin: false,
+  profiles: [], customers: [], santaConfig: { budget: '', date: '', drawnAt: null }, myAssignment: null, allAssignments: [], opened: [],
+  page: 'home', search: '', filter: 'all', pendingCustomerRender: false, profileDirty: false, revealed: false, focusNewId: null,
+  today: '', authMode: 'login', unsub: null, profilesLoaded: false
+};
+const timers = {};
+let pendingSaves = 0;
+
+function setSave(state, text) {
+  const pill = $('savePill'); pill.dataset.state = state;
+  $('saveText').textContent = text || { saved: 'Gespeichert', saving: 'Speichert …', error: 'Fehler beim Speichern', offline: 'Offline' }[state];
+}
+function track(fn, okMsg) {
+  pendingSaves++; setSave('saving');
+  return Promise.resolve().then(fn).then(() => {
+    pendingSaves--; if (!pendingSaves) setSave(navigator.onLine === false ? 'offline' : 'saved');
+    if (okMsg) toast(okMsg);
+    return true;
+  }, e => {
+    pendingSaves--; setSave('error'); toast('⚠️ ' + errMsg(e)); return false;
+  });
+}
+const me = () => S.profiles.find(p => S.user && p.uid === S.user.uid) || null;
+const myNick = () => (me() && me().nickname) || '';
+
+/* ======================= DECOR ======================= */
+function decorate() {
+  const colors = ['#ff4d4d', '#ffd24d', '#4dff88', '#4dc3ff', '#ff7ae0'];
+  const lights = $('lights');
+  for (let i = 0; i < 26; i++) lights.appendChild(h('span', { class: 'bulb', style: '--c:' + colors[i % colors.length] + ';--d:' + ((i % 5) * 0.3) + 's' }));
+  document.querySelectorAll('.stars').forEach(box => { for (let i = 0; i < 28; i++) box.appendChild(h('span', { class: 'star', style: 'left:' + (Math.random() * 100).toFixed(1) + '%;top:' + (Math.random() * 60).toFixed(1) + '%;animation-delay:' + (Math.random() * 2.4).toFixed(2) + 's' })); });
+  if (CONFIG.features.snow && !reducedMotion) {
+    const layer = $('snowLayer'), chars = ['❄', '❅', '❆', '•'];
+    for (let i = 0; i < CONFIG.snowflakes; i++) {
+      const size = 8 + Math.random() * 14;
+      layer.appendChild(h('span', { class: 'flake', text: chars[i % chars.length], style: 'left:' + (Math.random() * 100).toFixed(2) + '%;font-size:' + size.toFixed(1) + 'px;opacity:' + (0.45 + Math.random() * 0.5).toFixed(2) + ';animation-duration:' + (9 + Math.random() * 12).toFixed(1) + 's;animation-delay:-' + (Math.random() * 20).toFixed(1) + 's' }));
+    }
+  }
+  document.querySelectorAll('[data-sleigh]').forEach(b => {
+    if (!CONFIG.features.sleigh) { b.classList.add('hidden'); return; }
+    b.addEventListener('click', () => {
+      const n = (Number(Safe.get('wz-sleigh')) || 0) + 1; Safe.set('wz-sleigh', String(n));
+      toast('🎅 Ho ho ho! Du hast den Schlitten ' + n + '× gefangen!');
+    });
+  });
+}
+
+/* ======================= VIEWS ======================= */
+function showView(name) {
+  ['loadingView', 'loginView', 'verifyView', 'appView'].forEach(v => $(v).classList.toggle('hidden', v !== name));
+}
+function nav(page) {
+  if (page === 'setup' && $('navSetup').classList.contains('hidden')) page = 'home';
+  S.page = page;
+  document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + page));
+  document.querySelectorAll('.nav button').forEach(b => b.classList.toggle('active', b.dataset.page === page));
+  if (page === 'profile') fillProfileForm(false);
+  try { $('page-' + page).scrollIntoView({ block: 'nearest' }); } catch (e) { /* ignore */ }
+}
+
+function setAuthMode(m) {
+  S.authMode = m;
+  $('tabLogin').classList.toggle('active', m === 'login'); $('tabRegister').classList.toggle('active', m === 'register');
+  $('password2Field').classList.toggle('hidden', m !== 'register');
+  $('loginSubmit').textContent = m === 'register' ? '✨ Konto erstellen' : '🔓 Eintreten';
+  $('loginPassword').setAttribute('autocomplete', m === 'register' ? 'new-password' : 'current-password');
+  $('loginError').textContent = '';
+}
+function setupLoginUI() {
+  const fbMode = S.mode === 'firebase';
+  $('authTabs').classList.toggle('hidden', !fbMode);
+  $('emailField').classList.toggle('hidden', !fbMode);
+  $('resetPwBtn').classList.toggle('hidden', !fbMode);
+  $('loginHint').textContent = fbMode ? 'Nur mit ' + (CONFIG.allowedEmailDomain ? '@' + CONFIG.allowedEmailDomain + '-' : '') + 'Adresse. Nach der Registrierung bestätigst du deine E-Mail.' : 'Lokaler Modus: Daten bleiben in diesem Browser.';
+  $('tabLogin').onclick = () => setAuthMode('login');
+  $('tabRegister').onclick = () => setAuthMode('register');
+  let busy = false;
+  $('loginForm').onsubmit = async e => {
+    e.preventDefault(); if (busy) return;
+    const email = C.clean($('loginEmail').value, 120).toLowerCase(), pw = $('loginPassword').value;
+    const out = $('loginError'); out.textContent = '';
+    if (!pw) { out.textContent = 'Bitte Passwort eingeben.'; return; }
+    if (fbMode) {
+      if (!C.isAllowedEmail(email, CONFIG.allowedEmailDomain)) { out.textContent = 'Bitte deine ' + (CONFIG.allowedEmailDomain ? '@' + CONFIG.allowedEmailDomain + '-' : '') + 'E-Mail verwenden.'; return; }
+      if (S.authMode === 'register') {
+        if (pw.length < 8) { out.textContent = 'Passwort: mindestens 8 Zeichen.'; return; }
+        if (pw !== $('loginPassword2').value) { out.textContent = 'Die Passwörter stimmen nicht überein.'; return; }
+      }
+    }
+    busy = true; $('loginSubmit').disabled = true;
+    try {
+      if (fbMode && S.authMode === 'register') await S.store.register(email, pw); else await S.store.login(email, pw);
+      $('loginPassword').value = ''; $('loginPassword2').value = '';
+    } catch (err) { out.textContent = errMsg(err); }
+    finally { busy = false; $('loginSubmit').disabled = false; }
+  };
+  $('resetPwBtn').onclick = async () => {
+    const email = C.clean($('loginEmail').value, 120).toLowerCase();
+    if (!C.isAllowedEmail(email, CONFIG.allowedEmailDomain)) { $('loginError').textContent = 'Bitte zuerst deine E-Mail eingeben.'; return; }
+    try { await S.store.resetPassword(email); toast('📧 Link zum Zurücksetzen wurde gesendet.'); } catch (err) { $('loginError').textContent = errMsg(err); }
+  };
+  $('verifyDoneBtn').onclick = async () => {
+    try { const u = await S.store.reloadUser(); if (u && u.verified) onAuthChanged(u); else $('verifyError').textContent = 'Noch nicht bestätigt. Bitte Link in der Mail anklicken (ggf. Spam-Ordner prüfen).'; }
+    catch (err) { $('verifyError').textContent = errMsg(err); }
+  };
+  $('verifyResendBtn').onclick = async () => { try { await S.store.resendVerification(); toast('📧 Bestätigungs-Mail erneut gesendet.'); } catch (err) { $('verifyError').textContent = errMsg(err); } };
+  $('verifyLogoutBtn').onclick = () => S.store.logout().catch(err => toast(errMsg(err)));
+}
+
+async function onAuthChanged(user) {
+  if (S.unsub) { S.unsub(); S.unsub = null; }
+  S.user = user; S.revealed = false; S.profileDirty = false; S.profilesLoaded = false;
+  if (!user) { showView('loginView'); setTimeout(() => { try { (S.mode === 'firebase' ? $('loginEmail') : $('loginPassword')).focus(); } catch (e) { /* ignore */ } }, 50); return; }
+  if (S.mode === 'firebase' && !user.verified) { $('verifyEmail').textContent = user.email; $('verifyError').textContent = ''; showView('verifyView'); return; }
+  S.isAdmin = await S.store.checkAdmin(user.email);
+  if (!S.user || S.user.uid !== user.uid) return;
+  $('navSetup').classList.toggle('hidden', !(S.isAdmin || S.mode === 'local'));
+  nav('home');
+  S.unsub = S.store.subscribe(user.uid, S.isAdmin, {
+    profiles: list => {
+      const first = !S.profilesLoaded;
+      S.profiles = list.filter(p => p && C.clean(p.nickname)); S.profilesLoaded = true;
+      if (first && !me()) nav('profile');
+      renderHeader(); renderHome(); renderSanta(); renderOwnerList(); renderProfilePreview(); if (S.page === 'profile') fillProfileForm(false); requestCustomerRender();
+    },
+    customers: list => { S.customers = list; renderHome(); requestCustomerRender(); },
+    santaConfig: cfg => { S.santaConfig = cfg || {}; renderSanta(); renderHome(); },
+    myAssignment: a => { S.myAssignment = a; renderSanta(); renderHome(); },
+    allAssignments: list => { S.allAssignments = list || []; renderSanta(); },
+    calendar: opened => { S.opened = opened; renderCalendar(); },
+    error: e => { setSave('error'); toast('⚠️ ' + errMsg(e)); }
+  });
+  showView('appView');
+  renderAll();
+}
+
+function renderHeader() {
+  $('userName').textContent = '🧑‍🎄 ' + (myNick() || (S.user && S.user.email) || '');
+  const d = C.daysUntil(S.today, CONFIG.christmasEve);
+  $('countdown').textContent = d > 1 ? '🎁 Noch ' + d + ' Tage bis Heiligabend' : d === 1 ? '🎁 Morgen ist Heiligabend!' : d === 0 ? '🌟 Heute ist Heiligabend!' : '🎄 Frohe Festtage!';
+}
+function renderHome() {
+  $('profileMissing').classList.toggle('hidden', !S.profilesLoaded || !!me());
+  $('dailyQuote').textContent = C.dailyInspiration(S.today);
+  const p = C.progress(S.customers);
+  $('progressText').textContent = p.percent + ' %';
+  $('progressBar').style.width = p.percent + '%';
+  $('progressSub').textContent = p.total ? p.done + ' von ' + p.total + ' Karten versendet.' : 'Noch keine Kunden erfasst.';
+  $('statGrid').replaceChildren(...C.STATUSES.map(s => h('div', { class: 'stat' }, h('b', { text: String(p.counts[s]) }), s)));
+  const nick = myNick().toLowerCase();
+  const mine = S.customers.filter(c => nick && c.owner.toLowerCase() === nick && c.status !== 'Versendet').sort((a, b) => a.customer.localeCompare(b.customer, 'de'));
+  const box = $('focusList');
+  if (!mine.length) box.replaceChildren(h('div', { class: 'empty', text: nick ? '🎉 Keine offenen Karten für dich.' : 'Erstelle dein Profil, um deine Karten zu sehen.' }));
+  else box.replaceChildren(...[...mine.slice(0, 6).map(c => h('div', { class: 'focus-item' }, h('span', null, h('b', { text: c.customer }), c.contact ? ' · ' + c.contact : ''), h('span', { class: 'pill', text: c.status }))), mine.length > 6 ? h('p', { class: 'hint', text: '… und ' + (mine.length - 6) + ' weitere.' }) : null].filter(Boolean));
+  const drawn = !!S.santaConfig.drawnAt;
+  $('homeSanta').textContent = !drawn ? '⏳ Die Auslosung hat noch nicht stattgefunden.' : S.myAssignment ? '🤫 Dein Wichtelkind ist ausgelost – schau nach, wen du beschenkst!' : 'Die Auslosung ist erfolgt – du bist diesmal nicht dabei.';
+}
+
+const CAL_DAYS = C.calendarDays(CONFIG.calendarStart, CONFIG.calendarEnd);
+function renderCalendar() {
+  const box = $('calendar'); if (!box) return;
+  const openedSet = new Set(S.opened);
+  const byMonth = {};
+  CAL_DAYS.forEach((d, i) => { (byMonth[d.slice(0, 7)] = byMonth[d.slice(0, 7)] || []).push([d, i]); });
+  const icons = { '10': '🍂', '11': '🌰', '12': '🎄' };
+  box.replaceChildren(...Object.keys(byMonth).map(m => h('div', { class: 'month' },
+    h('h3', null, (icons[m.slice(5)] || '❄') + ' ' + C.monthName(m + '-01')),
+    h('div', { class: 'doors' }, ...byMonth[m].map(([d, i]) => {
+      const openable = C.isDoorOpenable(d, S.today), opened = openedSet.has(d), isToday = d === S.today;
+      const label = 'Türchen ' + C.formatDayKey(d) + (opened ? ', geöffnet' : openable ? ', kann geöffnet werden' : ', öffnet am ' + C.formatDayKey(d));
+      return h('button', { type: 'button', class: 'door' + (openable ? '' : ' locked') + (opened ? ' opened' : '') + (isToday ? ' today' : ''), 'aria-label': label, title: label, 'data-day': d, onclick: () => openDoor(d, i) },
+        h('span', { text: opened ? '✓' : String(Number(d.slice(8))) }), opened ? h('small', { text: String(Number(d.slice(8))) + '.' }) : isToday ? h('small', { text: 'heute' }) : null);
+    })))));
+  const avail = CAL_DAYS.filter(d => C.isDoorOpenable(d, S.today)).length;
+  $('calStats').textContent = S.opened.filter(d => CAL_DAYS.includes(d)).length + ' von ' + avail + ' verfügbaren Türchen geöffnet';
+}
+let modalReturn = null;
+function openDoor(day, index) {
+  if (!C.isDoorOpenable(day, S.today)) { toast('🔒 Geduld! Dieses Türchen öffnet am ' + C.formatDayKey(day) + '.'); return; }
+  const c = C.adventContent(day, index);
+  modalReturn = document.activeElement;
+  $('modalIcon').textContent = c.icon; $('modalType').textContent = c.type; $('modalTitle').textContent = c.title; $('modalText').textContent = c.text;
+  $('modalDate').textContent = 'Türchen vom ' + C.formatDayKey(day);
+  $('modalAnswer').classList.add('hidden'); $('modalAnswer').textContent = c.answer || '';
+  $('modalAnswerBtn').classList.toggle('hidden', !c.answer);
+  $('modal').classList.remove('hidden');
+  $('modalClose').focus();
+  if (!S.opened.includes(day)) {
+    S.opened = S.opened.concat(day);
+    renderCalendar();
+    track(() => S.store.saveCalendar(S.user.uid, S.opened));
+  }
+}
+function closeModal() { $('modal').classList.add('hidden'); if (modalReturn && modalReturn.focus) try { modalReturn.focus(); } catch (e) { /* ignore */ } }
+
+function isEditingCustomer() { const a = document.activeElement; return !!a && $('customerArea').contains(a) && (a.tagName === 'INPUT' || a.tagName === 'SELECT'); }
+function requestCustomerRender() {
+  if (isEditingCustomer()) { S.pendingCustomerRender = true; return; }
+  renderCustomers();
+}
+function renderOwnerList() { $('ownerList').replaceChildren(...S.profiles.map(p => h('option', { value: p.nickname }))); }
+function visibleCustomers() {
+  const q = S.search.toLowerCase(), nick = myNick().toLowerCase();
+  return S.customers.filter(c => {
+    if (S.filter === 'mine' && (!nick || c.owner.toLowerCase() !== nick)) return false;
+    if (S.filter === 'open' && c.status === 'Versendet') return false;
+    if (S.filter === 'unassigned' && c.owner) return false;
+    return !q || [c.customer, c.contact, c.owner, c.note, c.status].some(v => String(v || '').toLowerCase().includes(q));
+  }).sort((a, b) => a.customer.localeCompare(b.customer, 'de') || a.id.localeCompare(b.id));
+}
+function saveField(id, field, value) {
+  const c = S.customers.find(x => x.id === id); if (!c) return;
+  if (field === 'customer' && !C.clean(value)) return;
+  const cleaned = sanitizeCustomer(Object.assign({}, c, { [field]: value }))[field];
+  if (c[field] === cleaned) return;
+  c[field] = cleaned;
+  renderHome();
+  track(() => S.store.updateCustomerField(id, field, cleaned));
+}
+function renderCustomers() {
+  S.pendingCustomerRender = false;
+  const area = $('customerArea');
+  const list = visibleCustomers();
+  $('customerCount').textContent = list.length + ' von ' + S.customers.length + ' angezeigt';
+  if (!S.customers.length) { area.className = 'empty'; area.replaceChildren(document.createTextNode('🎄 Noch keine Kunden. Importiere eine Excel-/CSV-Datei oder füge einen Kunden hinzu.')); return; }
+  area.className = 'table-wrap';
+  const rows = list.map(c => {
+    const textCell = (field, max, label) => {
+      const inp = h('input', { value: c[field] || '', maxlength: String(max), 'aria-label': label, list: field === 'owner' ? 'ownerList' : null, 'data-field': field });
+      const key = c.id + ':' + field;
+      inp.addEventListener('input', () => { const v = inp.value; clearTimeout(timers[key]); timers[key] = setTimeout(() => saveField(c.id, field, v), 700); });
+      inp.addEventListener('change', () => {
+        clearTimeout(timers[key]);
+        if (field === 'customer' && !C.clean(inp.value)) { inp.value = c.customer; toast('Der Kundenname darf nicht leer sein.'); return; }
+        saveField(c.id, field, inp.value);
+      });
+      return h('td', null, inp);
+    };
+    const sel = h('select', { 'aria-label': 'Status von ' + c.customer, 'data-field': 'status' }, ...C.STATUSES.map(s => h('option', { value: s, text: s, selected: s === c.status })));
+    const tr = h('tr', { 'data-id': c.id, 'data-status': c.status },
+      textCell('customer', 120, 'Kunde'), textCell('contact', 120, 'Ansprechpartner'), textCell('owner', 120, 'Verantwortlich'),
+      h('td', null, sel), textCell('note', 220, 'Notiz'),
+      h('td', null, h('button', { type: 'button', class: 'btn small light', 'aria-label': 'Löschen: ' + c.customer, text: '🗑️', onclick: () => { if (window.confirm('«' + c.customer + '» wirklich löschen?')) { S.customers = S.customers.filter(x => x.id !== c.id); renderCustomers(); renderHome(); track(() => S.store.deleteCustomer(c.id), 'Gelöscht.'); } } })));
+    sel.addEventListener('change', () => { tr.dataset.status = sel.value; saveField(c.id, 'status', sel.value); });
+    return tr;
+  });
+  const table = h('table', { class: 'table' },
+    h('thead', null, h('tr', null, ...['Kunde', 'Ansprechpartner', 'Verantwortlich', 'Status', 'Notiz', ''].map(t => h('th', { scope: 'col', text: t })))),
+    h('tbody', null, ...rows));
+  area.replaceChildren(list.length ? table : h('div', { class: 'empty', text: 'Keine Treffer für diesen Filter.' }));
+  if (S.focusNewId) {
+    const inp = area.querySelector('tr[data-id="' + CSS.escape(S.focusNewId) + '"] input');
+    if (inp) { S.focusNewId = null; inp.focus(); inp.select(); }
+  }
+}
+function addCustomer() {
+  const id = S.store.newCustomerId();
+  const c = Object.assign({ id }, sanitizeCustomer({ customer: 'Neuer Kunde', owner: myNick(), status: 'Offen' }));
+  S.customers = S.customers.concat(c);
+  if (S.filter !== 'all') { S.filter = 'all'; $('customerFilter').value = 'all'; }
+  S.search = ''; $('customerSearch').value = '';
+  S.focusNewId = id;
+  renderCustomers(); renderHome();
+  track(() => S.store.createCustomer(id, c), '➕ Kunde hinzugefügt.');
+}
+
+/* --- Excel (.xlsx) reader without external libraries --- */
+async function unzip(buf) {
+  const u8 = new Uint8Array(buf), dv = new DataView(buf);
+  let eocd = -1;
+  for (let i = u8.length - 22; i >= Math.max(0, u8.length - 65557); i--) if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  if (eocd < 0) throw new Error('Das ist keine gültige .xlsx-Datei.');
+  const count = dv.getUint16(eocd + 10, true); let off = dv.getUint32(eocd + 16, true);
+  const files = {}, dec = new TextDecoder();
+  for (let n = 0; n < count; n++) {
+    if (off + 46 > u8.length || dv.getUint32(off, true) !== 0x02014b50) throw new Error('Die Excel-Datei ist beschädigt.');
+    const nlen = dv.getUint16(off + 28, true);
+    files[dec.decode(u8.subarray(off + 46, off + 46 + nlen))] = { method: dv.getUint16(off + 10, true), csize: dv.getUint32(off + 20, true), lho: dv.getUint32(off + 42, true) };
+    off += 46 + nlen + dv.getUint16(off + 30, true) + dv.getUint16(off + 32, true);
+  }
+  return {
+    async read(name) {
+      const f = files[name]; if (!f) return null;
+      const start = f.lho + 30 + dv.getUint16(f.lho + 26, true) + dv.getUint16(f.lho + 28, true);
+      const data = u8.subarray(start, start + f.csize);
+      if (f.method === 0) return dec.decode(data);
+      if (f.method !== 8) throw new Error('Diese Excel-Komprimierung wird nicht unterstützt – bitte als CSV speichern.');
+      if (typeof DecompressionStream === 'undefined') throw new Error('Dein Browser kann Excel nicht lesen – bitte als CSV speichern.');
+      return new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text();
+    }
+  };
+}
+async function readXlsx(buf) {
+  const z = await unzip(buf);
+  const parse = t => { const d = new DOMParser().parseFromString(t, 'application/xml'); if (d.getElementsByTagName('parsererror').length) throw new Error('Excel-Inhalt nicht lesbar.'); return d; };
+  const all = (n, tag) => Array.from(n.getElementsByTagNameNS('*', tag));
+  let sheetPath = 'xl/worksheets/sheet1.xml';
+  const wb = await z.read('xl/workbook.xml'), rels = await z.read('xl/_rels/workbook.xml.rels');
+  if (wb && rels) {
+    const first = all(parse(wb), 'sheet')[0];
+    const rid = first && (first.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id') || first.getAttribute('r:id'));
+    const rel = rid && all(parse(rels), 'Relationship').find(r => r.getAttribute('Id') === rid);
+    if (rel) { const t = rel.getAttribute('Target') || ''; sheetPath = t.startsWith('/') ? t.slice(1) : 'xl/' + t.replace(/^\.\//, ''); }
+  }
+  const sheet = await z.read(sheetPath);
+  if (!sheet) throw new Error('Keine Tabelle in der Excel-Datei gefunden.');
+  const ss = await z.read('xl/sharedStrings.xml');
+  const shared = ss ? all(parse(ss), 'si').map(si => all(si, 't').filter(t => !(t.parentNode && t.parentNode.localName === 'rPh')).map(t => t.textContent).join('')) : [];
+  const colIdx = ref => { const m = /^([A-Z]+)/.exec(ref || ''); if (!m) return -1; let n = 0; for (const ch of m[1]) n = n * 26 + ch.charCodeAt(0) - 64; return n - 1; };
+  const grid = all(parse(sheet), 'row').map(row => {
+    const r = []; let auto = 0;
+    all(row, 'c').forEach(c => {
+      let col = colIdx(c.getAttribute('r')); if (col < 0) col = auto; auto = col + 1;
+      if (col > 200) return;
+      const t = c.getAttribute('t'), v = all(c, 'v')[0];
+      r[col] = t === 's' ? (shared[Number(v && v.textContent)] || '') : t === 'inlineStr' ? all(c, 't').map(x => x.textContent).join('') : t === 'b' ? (v && v.textContent === '1' ? 'WAHR' : 'FALSCH') : (v ? v.textContent : '');
+    });
+    return r;
+  }).filter(r => r.some(x => x != null && String(x).trim() !== ''));
+  if (!grid.length) return [];
+  const head = grid.shift().map(x => String(x == null ? '' : x).trim());
+  return grid.map(r => { const o = {}; head.forEach((hd, i) => { if (hd) o[hd] = String(r[i] == null ? '' : r[i]).trim(); }); return o; });
+}
+async function importFile(file) {
+  if (!file) return;
+  if (file.size > CONFIG.maxImportBytes) { toast('Datei zu gross (max. 10 MB).'); return; }
+  const name = file.name.toLowerCase();
+  try {
+    let raw;
+    if (name.endsWith('.xlsx')) raw = await readXlsx(await file.arrayBuffer());
+    else if (name.endsWith('.csv') || name.endsWith('.txt')) raw = C.parseCSV(await file.text());
+    else if (name.endsWith('.xls')) throw new Error('Altes .xls-Format: Bitte in Excel als .xlsx oder .csv speichern.');
+    else throw new Error('Bitte eine .xlsx- oder .csv-Datei wählen.');
+    const norm = raw.map(C.normalizeCustomerRow), missing = norm.filter(x => !x).length;
+    const { fresh, dupes } = C.dedupeImport(S.customers, norm.filter(Boolean));
+    if (!fresh.length) { toast('Nichts Neues gefunden (' + dupes.length + ' Duplikate, ' + missing + ' Zeilen ohne Kundenname). Spalte «Kunde» vorhanden?'); return; }
+    if (S.customers.length + fresh.length > CONFIG.maxCustomers) { toast('Zu viele Kunden (max. ' + CONFIG.maxCustomers + ').'); return; }
+    const ok = await track(() => S.store.addCustomers(fresh));
+    if (ok) toast('📥 ' + fresh.length + ' importiert' + (dupes.length ? ', ' + dupes.length + ' Duplikate übersprungen' : '') + (missing ? ', ' + missing + ' ohne Kundenname' : '') + '.');
+  } catch (e) { toast('⚠️ Import fehlgeschlagen: ' + errMsg(e)); }
+}
+function renderCardIdeas() {
+  $('cardIdeas').replaceChildren(...C.CARD_TEXTS.map(t => h('div', { class: 'idea' }, h('p', { text: t }),
+    h('button', { type: 'button', class: 'btn small light', text: '📋 Kopieren', 'aria-label': 'Text kopieren', onclick: async () => { try { await navigator.clipboard.writeText(t); toast('📋 Kopiert!'); } catch (e) { toast('Kopieren nicht möglich – bitte Text markieren.'); } } }))));
+}
+
+function participants() { return S.profiles.filter(p => p.santaOptIn !== false && C.clean(p.nickname)).sort((a, b) => a.nickname.localeCompare(b.nickname, 'de')); }
+function renderSanta() {
+  const cfg = S.santaConfig || {};
+  $('santaBudgetView').textContent = cfg.budget || 'noch offen';
+  $('santaDateView').textContent = cfg.date ? C.formatDayKey(cfg.date) : 'noch offen';
+  const ps = participants();
+  $('participantCount').textContent = ps.length + ' dabei';
+  $('participants').replaceChildren(...(ps.length ? ps.map(p => h('div', { class: 'participant' },
+    h('span', null, h('span', { class: 'avatar', 'aria-hidden': 'true', text: (p.nickname[0] || '?').toUpperCase() }), p.nickname + (S.user && p.uid === S.user.uid ? ' (du)' : '')),
+    S.isAdmin && S.user && p.uid !== S.user.uid ? h('button', { type: 'button', class: 'btn small light', text: 'Entfernen', 'aria-label': 'Profil entfernen: ' + p.nickname, onclick: () => { if (window.confirm('Profil «' + p.nickname + '» entfernen?')) track(() => S.store.deleteProfile(p.uid), 'Profil entfernt.'); } }) : null))
+    : [h('div', { class: 'empty', text: 'Noch niemand dabei. Profil erstellen und mitmachen!' })]));
+  const box = $('myAssignment'), a = S.myAssignment;
+  if (!cfg.drawnAt) box.replaceChildren(h('div', { class: 'empty', text: me() && me().santaOptIn === false ? 'Du hast dich vom Wichteln abgemeldet. Im Profil kannst du das ändern.' : '⏳ Die Auslosung hat noch nicht stattgefunden. Du wirst hier dein Wichtelkind sehen.' }));
+  else if (!a) box.replaceChildren(h('div', { class: 'empty', text: 'Die Auslosung ist erfolgt – du bist diesmal nicht dabei.' }));
+  else if (!S.revealed) box.replaceChildren(h('button', { type: 'button', class: 'giftbox', id: 'revealBtn', onclick: () => { S.revealed = true; renderSanta(); } }, h('span', { class: 'bow', 'aria-hidden': 'true', text: '🎀' }), h('span', { class: 'label', text: 'Klicke, um dein Wichtelkind zu enthüllen' })));
+  else {
+    const live = S.profiles.find(p => p.uid === a.receiverUid);
+    const prefs = (live && live.preferences) || a.receiverPreferences;
+    const quote = (live && live.quote) || a.receiverQuote;
+    box.replaceChildren(h('div', { class: 'reveal' }, h('div', { text: '🎉 Du beschenkst' }), h('div', { class: 'name', text: (live && live.nickname) || a.receiverNickname }),
+      quote ? h('p', { class: 'quote', text: '«' + quote + '»' }) : null,
+      h('div', { class: 'prefs' }, h('b', { text: 'Präferenzen: ' }), prefs || 'Keine Angaben – sei kreativ!'),
+      h('p', { class: 'hint', style: 'color:#d5e8de', text: 'Budget: ' + (cfg.budget || 'offen') + (cfg.date ? ' · Übergabe: ' + C.formatDayKey(cfg.date) : '') }),
+      h('button', { type: 'button', class: 'btn small ghost', text: 'Wieder verstecken', onclick: () => { S.revealed = false; renderSanta(); } })));
+  }
+  $('santaAdmin').classList.toggle('hidden', !S.isAdmin);
+  if (S.isAdmin) {
+    if (document.activeElement !== $('santaBudget')) $('santaBudget').value = cfg.budget || '';
+    if (document.activeElement !== $('santaDate')) $('santaDate').value = cfg.date || '';
+    $('drawBtn').disabled = ps.length < 3;
+    $('resetDrawBtn').disabled = !cfg.drawnAt;
+    const givers = new Set(S.allAssignments.map(x => x.giverUid)), now = new Set(ps.map(p => p.uid));
+    const changed = cfg.drawnAt && (givers.size !== now.size || [...now].some(u => !givers.has(u)));
+    $('drawInfo').textContent = ps.length < 3 ? 'Mindestens 3 Teilnehmende nötig (aktuell ' + ps.length + ').' : cfg.drawnAt ? '✅ Ausgelost am ' + new Date(cfg.drawnAt).toLocaleString('de-CH') + '.' + (changed ? ' ⚠️ Teilnehmende haben sich seither geändert – ggf. neu auslosen.' : '') : 'Bereit zum Auslosen: ' + ps.length + ' Teilnehmende.';
+    $('allAssignments').replaceChildren(...(S.allAssignments.length ? S.allAssignments.slice().sort((x, y) => String(x.giverNickname).localeCompare(String(y.giverNickname), 'de')).map(x => h('div', { text: x.giverNickname + ' → ' + x.receiverNickname })) : [h('div', { text: 'Keine Zuordnungen.' })]));
+  }
+}
+let drawing = false;
+async function doDraw() {
+  if (drawing) return;
+  const ps = participants();
+  let assignments;
+  try { assignments = C.makeDraw(ps); } catch (e) { toast(e.message); return; }
+  if (S.santaConfig.drawnAt && !window.confirm('Es gibt bereits eine Auslosung. Neu auslosen? Alle sehen danach ein neues Wichtelkind.')) return;
+  drawing = true; $('drawBtn').disabled = true;
+  const ok = await track(() => S.store.writeDraw(assignments, { budget: $('santaBudget').value, date: $('santaDate').value }), '🎲 Ausgelost! Alle sehen jetzt ihr Wichtelkind.');
+  drawing = false; renderSanta();
+  if (ok) { S.revealed = false; burst(); }
+}
+let burstEls = [], burstTimer = null;
+function burst() {
+  if (reducedMotion) return;
+  burstEls.forEach(el => el.remove()); clearTimeout(burstTimer);
+  const layer = $('snowLayer'), items = ['🎁', '⭐', '🎄', '❄', '🦌', '🎅'];
+  burstEls = Array.from({ length: 18 }, (_, i) => layer.appendChild(h('span', { class: 'flake', text: items[i % items.length], style: 'left:' + (Math.random() * 100).toFixed(1) + '%;font-size:26px;animation-duration:' + (3 + Math.random() * 2).toFixed(1) + 's;animation-iteration-count:1' })));
+  burstTimer = setTimeout(() => { burstEls.forEach(el => el.remove()); burstEls = []; }, 5500);
+}
+
+function fillProfileForm(force) {
+  if (S.profileDirty && !force) return;
+  const p = me() || {};
+  $('pfNickname').value = p.nickname || ''; $('pfQuote').value = p.quote || ''; $('pfPrefs').value = p.preferences || ''; $('pfOptIn').checked = p.santaOptIn !== false;
+  renderProfilePreview();
+}
+function renderProfilePreview() {
+  const nick = C.clean($('pfNickname').value, 40) || (me() && me().nickname) || '';
+  const quote = C.cleanMulti($('pfQuote').value, 220), prefs = C.cleanMulti($('pfPrefs').value, 300);
+  $('profilePreview').replaceChildren(nick ? h('div', null, h('div', { class: 'kpi', text: '🧑‍🎄 ' + nick }), h('p', { class: 'quote', text: quote ? '«' + quote + '»' : 'Noch keine Weihnachtsquote.' }), h('p', { class: 'muted', text: 'Präferenzen: ' + (prefs || 'keine Angaben') }), h('span', { class: 'pill', text: $('pfOptIn').checked ? '🎁 Wichtelt mit' : 'Wichtelt nicht mit' })) : h('p', { class: 'muted', text: 'Noch kein Profil gespeichert.' }));
+}
+let profileSaving = false;
+async function saveProfile(e) {
+  e.preventDefault();
+  if (profileSaving) return;
+  const p = { nickname: C.clean($('pfNickname').value, 40), quote: C.cleanMulti($('pfQuote').value, 220), preferences: C.cleanMulti($('pfPrefs').value, 300), santaOptIn: $('pfOptIn').checked, email: S.user.email };
+  const err = $('profileError'); err.textContent = '';
+  if (!p.nickname) { err.textContent = 'Bitte einen Nickname eingeben.'; $('pfNickname').focus(); return; }
+  if (S.profiles.some(x => x.uid !== S.user.uid && x.nickname.toLowerCase() === p.nickname.toLowerCase())) { err.textContent = 'Dieser Nickname ist schon vergeben.'; return; }
+  const oldNick = myNick();
+  profileSaving = true; $('profileSaveBtn').disabled = true;
+  const ok = await track(() => S.store.saveProfile(S.user.uid, p), '💾 Profil gespeichert!');
+  profileSaving = false; $('profileSaveBtn').disabled = false;
+  if (ok) {
+    S.profileDirty = false;
+    $('profileSavedHint').textContent = '✓ Gespeichert um ' + new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
+    if (oldNick && oldNick !== p.nickname) S.customers.filter(c => c.owner === oldNick).forEach(c => saveField(c.id, 'owner', p.nickname));
+    renderHeader(); renderHome();
+  }
+}
+
+function renderSetup() {
+  const local = S.mode === 'local';
+  $('modeBadge').textContent = local ? '💻 Lokaler Modus' : '☁️ Firebase-Modus';
+  $('modeText').textContent = local
+    ? 'Alle Daten werden nur in diesem Browser gespeichert (Profil, Kundenkarten, Kalender, Wichteln). Das Passwort ist hier nur eine Sichtsperre. Für das Team: Datei als index.html auf Firebase Hosting veröffentlichen – dann schaltet die App automatisch auf gemeinsame Daten und echte Konten um.'
+    : 'Daten liegen in Firestore und sind nur für angemeldete, bestätigte ' + (CONFIG.allowedEmailDomain ? '@' + CONFIG.allowedEmailDomain + '-' : '') + 'Konten zugänglich. Du bist Admin.';
+  $('localTools').classList.toggle('hidden', !local);
+  $('rulesText').value = (($('firestoreRulesSource') || {}).textContent || '').trim();
+  $('versionText').textContent = 'Version ' + CONFIG.version + (local ? ' · lokal' : ' · Firebase');
+}
+function renderAll() { renderHeader(); renderHome(); renderCalendar(); renderCustomers(); renderOwnerList(); renderSanta(); fillProfileForm(false); renderSetup(); }
+
+function bindEvents() {
+  document.querySelectorAll('.nav button').forEach(b => b.addEventListener('click', () => nav(b.dataset.page)));
+  document.addEventListener('click', e => { const g = e.target.closest && e.target.closest('[data-goto]'); if (g) nav(g.dataset.goto); });
+  $('logoutBtn').addEventListener('click', () => S.store.logout().catch(err => toast(errMsg(err))));
+  $('kindBtn').addEventListener('click', () => { const list = C.CHALLENGES; $('kindIdea').textContent = '💝 ' + list[Math.floor(Math.random() * list.length)]; });
+  $('todayDoorBtn').addEventListener('click', () => {
+    const i = CAL_DAYS.indexOf(S.today);
+    if (i >= 0) openDoor(S.today, i);
+    else if (S.today < CONFIG.calendarStart) toast('Der Kalender startet am ' + C.formatDayKey(CONFIG.calendarStart) + '.');
+    else { nav('calendar'); toast('Der Kalender ist vorbei – alle Türchen sind offen!'); }
+  });
+  $('modalClose').addEventListener('click', closeModal);
+  $('modal').addEventListener('click', e => { if (e.target === $('modal')) closeModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('modal').classList.contains('hidden')) closeModal(); });
+  $('modalAnswerBtn').addEventListener('click', () => { $('modalAnswer').classList.remove('hidden'); $('modalAnswerBtn').classList.add('hidden'); });
+  $('uploadBtn').addEventListener('click', () => $('customerFile').click());
+  $('customerFile').addEventListener('change', async () => { const f = $('customerFile').files[0]; await importFile(f); $('customerFile').value = ''; });
+  $('templateBtn').addEventListener('click', () => downloadText('kundenkarten-vorlage.csv', C.toCSV([{ customer: 'Beispiel AG', contact: 'Frau Muster', owner: myNick() || 'Nickname', status: 'Offen', note: 'Persönliche Zeile' }]), 'text/csv;charset=utf-8'));
+  $('exportCsvBtn').addEventListener('click', () => downloadText('kundenkarten-' + S.today + '.csv', C.toCSV(visibleCustomers()), 'text/csv;charset=utf-8'));
+  $('addCustomerBtn').addEventListener('click', addCustomer);
+  let searchTimer = null;
+  $('customerSearch').addEventListener('input', () => { clearTimeout(searchTimer); searchTimer = setTimeout(() => { S.search = C.clean($('customerSearch').value, 80); renderCustomers(); }, 200); });
+  $('customerFilter').addEventListener('change', () => { S.filter = $('customerFilter').value; renderCustomers(); });
+  $('customerArea').addEventListener('focusout', () => setTimeout(() => { if (S.pendingCustomerRender && !isEditingCustomer()) renderCustomers(); }, 0));
+  $('profileForm').addEventListener('submit', saveProfile);
+  ['pfNickname', 'pfQuote', 'pfPrefs', 'pfOptIn'].forEach(id => $(id).addEventListener(id === 'pfOptIn' ? 'change' : 'input', () => { S.profileDirty = true; $('profileSavedHint').textContent = 'Ungespeicherte Änderungen'; renderProfilePreview(); }));
+  window.addEventListener('beforeunload', e => { if (S.profileDirty || pendingSaves) { e.preventDefault(); e.returnValue = ''; } });
+  $('drawBtn').addEventListener('click', doDraw);
+  $('resetDrawBtn').addEventListener('click', () => { if (window.confirm('Auslosung wirklich zurücksetzen?')) track(() => S.store.resetDraw(), 'Auslosung zurückgesetzt.'); });
+  $('saveSantaBtn').addEventListener('click', () => track(() => S.store.saveSantaConfig({ budget: $('santaBudget').value, date: $('santaDate').value }), '💾 Einstellungen gespeichert.'));
+  $('demoBtn').addEventListener('click', () => { if (S.store.loadDemo) track(() => S.store.loadDemo(), '🎄 Demo-Daten geladen.'); });
+  $('exportJsonBtn').addEventListener('click', () => { if (S.store.exportData) downloadText('winterzauber-backup-' + S.today + '.json', S.store.exportData(), 'application/json'); });
+  $('importJsonBtn').addEventListener('click', () => $('jsonFile').click());
+  $('jsonFile').addEventListener('change', async () => { const f = $('jsonFile').files[0]; $('jsonFile').value = ''; if (!f || !S.store.importData) return; let text = ''; try { text = await f.text(); } catch (e) { toast('Datei nicht lesbar.'); return; } track(() => S.store.importData(text), '⬆️ Backup importiert.'); });
+  $('resetAllBtn').addEventListener('click', () => { if (S.store.resetAll && window.confirm('Wirklich ALLE lokalen Daten löschen?')) track(() => S.store.resetAll(), 'Alles gelöscht.'); });
+  $('copyRulesBtn').addEventListener('click', async () => { try { await navigator.clipboard.writeText($('rulesText').value); toast('📋 Regeln kopiert!'); } catch (e) { $('rulesText').focus(); $('rulesText').select(); toast('Bitte mit Ctrl+C kopieren.'); } });
+  window.addEventListener('online', () => { if (!pendingSaves) setSave('saved'); });
+  window.addEventListener('offline', () => setSave('offline'));
+}
+
+function detectMode() {
+  if (window.__WZ_FAKE_FB__) return 'firebase';
+  if (CONFIG.mode === 'local' || CONFIG.mode === 'firebase') return CONFIG.mode;
+  if (CONFIG.firebaseConfig.apiKey) return 'firebase';
+  return /\.(web\.app|firebaseapp\.com)$/.test(location.hostname) ? 'firebase' : 'local';
+}
+async function init() {
+  S.today = todayKey();
+  decorate();
+  bindEvents();
+  renderCardIdeas();
+  S.mode = detectMode();
+  setupLoginUI();
+  setAuthMode('login');
+  try {
+    if (S.mode === 'firebase') { const fb = await loadFirebase(); S.store = FirebaseStore(fb, await firebaseConfig(fb)); }
+    else S.store = LocalStore();
+  } catch (e) {
+    showView('loginView');
+    $('loginError').textContent = '⚠️ ' + errMsg(e) + ' Bitte Seite neu laden.';
+    $('loginSubmit').disabled = true;
+    return;
+  }
+  setInterval(() => { const t = todayKey(); if (t !== S.today) { S.today = t; if (S.user) { renderHeader(); renderHome(); renderCalendar(); } } }, 30000);
+  S.store.onAuth(u => { onAuthChanged(u).catch(e => toast('⚠️ ' + errMsg(e))); });
+}
+window.WZ = { S, CONFIG, setToday(k) { window.__WZ_TODAY__ = k; S.today = todayKey(); if (S.user) { renderHeader(); renderHome(); renderCalendar(); } } };
+init();
+
+</script>
+</body>
+</html>
