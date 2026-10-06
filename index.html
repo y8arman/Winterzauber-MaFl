@@ -1,8 +1,10 @@
 <!doctype html>
 <!--
-  WINTERZAUBER – Team-Weihnachts-App (eine einzige Datei)
+  WINTERZAUBER – Team-Weihnachts-App (eine einzige Datei) · Version 0.4.0 mit Live-Räumen
   Sofort testen: Datei im Browser öffnen, Passwort Winterzauber2026 (lokaler Modus, Daten bleiben in diesem Browser).
   Fürs Team: nach «firebaseConfig» suchen und die Firebase-Werte eintragen. Die Anleitung und die Firestore-Regeln stehen in der App unter «Setup».
+  WICHTIG beim Update auf 0.4.0: Die Firestore-Regeln haben neue Abschnitte (presence, rooms). In der App unter «Setup» kopieren und in Firebase veröffentlichen.
+  Auf GitHub Pages muss die Datei exakt «index.html» heissen und die alte Datei ersetzen.
 -->
 <html lang="de">
 <head>
@@ -192,7 +194,75 @@ tr[data-status="Versendet"]{background:#f1faf4}
 .footer{text-align:center;color:var(--muted);padding:10px 16px 30px;font-size:13px}
 .loading{min-height:100vh;display:grid;place-items:center;background:var(--night);color:#fff;font-size:20px}
 
-@media (max-width:900px){.span3,.span4,.span5,.span6,.span7,.span8{grid-column:span 12}}
+/* ---------- Live-Räume ---------- */
+.onlinepill{color:#fff;cursor:pointer;min-height:32px}
+.onlinepill .dot{background:#2ecc71;animation:pulse 2.2s ease-in-out infinite}
+.navbadge{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;margin-left:6px;border-radius:99px;background:var(--gold);color:#3b2a07;font-size:12px;font-weight:800;vertical-align:1px}
+.nav button.active .navbadge{background:#fff;color:var(--red)}
+.updatebar{position:fixed;top:0;left:0;right:0;z-index:150;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;padding:10px 16px;background:var(--gold);color:#3b2a07;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.2)}
+.roomscene{background:linear-gradient(135deg,#0a3324 0%,#0f4d36 60%,#2f9a5c 130%)}
+.scene-kamin{background:linear-gradient(135deg,#7a240c 0%,#c2410c 58%,#f59e0b 125%)}
+.scene-baeckerei{background:linear-gradient(135deg,#5a3818 0%,#9a6430 60%,#e2b04a 130%)}
+.scene-werkstatt{background:linear-gradient(135deg,#0a3324 0%,#0f4d36 60%,#2f9a5c 130%)}
+.scene-wichtelstube{background:linear-gradient(135deg,#6d0a1b 0%,#b3122e 60%,#e2b04a 140%)}
+.roomlist{display:flex;flex-direction:column;gap:12px;margin-top:16px}
+.roomcard{position:relative;display:block;width:100%;text-align:left;border:2px solid transparent;border-radius:16px;padding:13px 14px 12px;color:#fff;overflow:hidden;box-shadow:0 6px 14px rgba(0,0,0,.12);transition:transform .15s,box-shadow .15s}
+.roomcard:hover{transform:translateY(-2px);box-shadow:0 10px 20px rgba(0,0,0,.18)}
+.roomcard:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.roomcard.here{border-color:var(--gold-l);box-shadow:0 0 0 3px rgba(226,176,74,.55),0 8px 18px rgba(0,0,0,.18)}
+.roomcard .rc-top{display:flex;align-items:center;gap:10px}
+.roomcard .rc-icon{font-size:28px;line-height:1}
+.roomcard .rc-name{font-family:Georgia,serif;font-weight:700;font-size:18px}
+.roomcard .rc-count{margin-left:auto;background:rgba(0,0,0,.28);border-radius:99px;padding:3px 10px;font-size:12px;font-weight:700;white-space:nowrap}
+.roomcard .rc-desc{display:block;font-size:13px;opacity:.92;margin:4px 0 8px}
+.faces{display:flex;align-items:center;flex-wrap:wrap;gap:4px;min-height:30px}
+.face{position:relative;display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;color:#fff;font-weight:800;font-size:13px;line-height:1;border:2px solid rgba(255,255,255,.9);background:var(--av,#0f4d36);flex:0 0 30px}
+.face.away{opacity:.6;filter:grayscale(.7)}
+.face .st{position:absolute;right:-3px;bottom:-3px;width:11px;height:11px;border-radius:50%;background:#2ecc71;border:2px solid #fff}
+.face.away .st{background:#9aa3ad}
+.face.more{background:rgba(0,0,0,.32);font-size:11px}
+.lobby{margin:14px 0 0;font-size:13px;color:var(--muted)}
+.roomstage{padding:0;overflow:hidden}
+.roomhead{position:relative;color:#fff;padding:20px 22px 16px;overflow:hidden}
+.roomhead h2{margin:0;font-size:26px;text-shadow:0 2px 8px rgba(0,0,0,.25)}
+.roomhead p{margin:4px 0 12px;opacity:.92}
+.roomhead .glow{position:absolute;right:-18px;top:-26px;font-size:130px;opacity:.18;pointer-events:none;line-height:1}
+.scene-kamin .glow{animation:flicker 2.4s ease-in-out infinite}
+@keyframes flicker{0%,100%{opacity:.16;transform:scale(1)}40%{opacity:.28;transform:scale(1.05)}70%{opacity:.13;transform:scale(.98)}}
+.people{position:relative;display:flex;flex-wrap:wrap;gap:8px}
+.person{display:inline-flex;align-items:center;gap:7px;background:rgba(0,0,0,.22);border-radius:99px;padding:3px 12px 3px 3px;font-size:13px;font-weight:600}
+.chatwrap{position:relative}
+.chatlog{height:min(52vh,430px);overflow-y:auto;padding:12px 18px;background:#fffdf8;scroll-behavior:auto}
+.msg{display:flex;gap:8px;align-items:flex-end;margin:10px 0}
+.msg.mine{flex-direction:row-reverse}
+.msg .face{border-color:#fff;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.msg .bubble{background:#fff;border:1px solid #efe3cc;border-radius:16px 16px 16px 4px;padding:7px 12px 8px;max-width:min(78%,520px);box-shadow:0 2px 6px rgba(0,0,0,.04);min-width:0}
+.msg.mine .bubble{background:#eaf5ee;border-color:#cfe7d8;border-radius:16px 16px 4px 16px}
+.msg .meta{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--muted);margin-bottom:2px}
+.msg .meta b{color:var(--ink)}
+.msg .text{white-space:pre-wrap;overflow-wrap:anywhere}
+.msg .del{border:0;background:none;color:var(--muted);font-size:12px;padding:2px 4px;margin-left:auto;border-radius:6px}
+.msg .del:hover{background:#f3ead9;color:var(--red)}
+.msg.pending .bubble{opacity:.65}
+.sysline{text-align:center;font-size:12px;color:var(--muted);margin:8px 0}
+.reactlayer{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.floatreact{position:absolute;bottom:8px;display:flex;flex-direction:column;align-items:center;font-size:34px;line-height:1.1;animation:floatup 2.8s ease-out forwards}
+.floatreact small{font-size:11px;font-weight:700;background:rgba(255,255,255,.92);color:var(--ink);border-radius:99px;padding:1px 7px;margin-top:2px;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+@keyframes floatup{0%{transform:translateY(0) scale(.6);opacity:0}15%{transform:translateY(-30px) scale(1.15);opacity:1}100%{transform:translateY(-300px) scale(1);opacity:0}}
+.reactbar{display:flex;gap:6px;flex-wrap:wrap;padding:10px 18px;border-top:1px solid #efe3cc;background:#fbf5ea}
+.reactbar button{border:1px solid #e6d9bf;background:#fff;border-radius:12px;min-width:44px;min-height:42px;font-size:20px;transition:transform .12s}
+.reactbar button:hover{transform:scale(1.15)}
+.chatform{display:flex;gap:8px;padding:4px 18px 16px;background:#fbf5ea}
+.chatform input{flex:1;min-width:0;border:1px solid #d7cbb3;border-radius:12px;padding:11px;min-height:44px;background:#fff}
+.homerooms .hr{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px dashed #e6d9bf}
+.homerooms .hr:last-child{border-bottom:0}
+.homerooms .hr>span:first-child{flex:0 0 auto;white-space:nowrap}
+.homerooms .hr .muted{text-align:right;overflow-wrap:anywhere;min-width:0}
+.focus-item .pill{white-space:nowrap;align-self:flex-start}
+.diag{margin:0;padding-left:18px}
+.diag li{margin:4px 0}
+
+@media (max-width:900px){.span3,.span4,.span5,.span6,.span7,.span8{grid-column:span 12}#page-rooms.inroom .roomstage{order:-1}#page-rooms.inroom .roomcard .rc-desc{display:none}#page-rooms.inroom .roomlist{gap:8px}}
 @media (max-width:640px){
   .top{padding:44px 16px 110px}.hero{margin-top:22px}.hero p{font-size:16px}
   .top .trees.right{display:none}.moon{width:46px;height:46px;top:50px}
@@ -200,6 +270,8 @@ tr[data-status="Versendet"]{background:#f1faf4}
   .doors{grid-template-columns:repeat(auto-fill,minmax(62px,1fr));gap:8px}
   .door{font-size:18px}.statgrid{grid-template-columns:repeat(2,1fr)}
   .card{padding:20px 16px}
+  .roomstage{padding:0}.roomhead{padding:18px 16px 14px}.chatlog{height:50vh;padding:10px 12px}
+  .reactbar,.chatform{padding-left:12px;padding-right:12px}.msg .bubble{max-width:84%}
 }
 @media (max-height:420px){.top{padding-top:44px;padding-bottom:96px}.hero{margin-top:12px}.hero h1{font-size:30px}.sleigh{top:40px}.login .trees{display:none}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}.sleigh{left:auto;right:12%}}
@@ -338,6 +410,7 @@ tr[data-status="Versendet"]{background:#f1faf4}
   <div class="brandbar">
     <div class="brand"><span class="logo" aria-hidden="true"><svg width="28" height="36"><use href="#sym-tree"/></svg></span> Winterzauber</div>
     <div class="userbox">
+      <button type="button" class="savepill onlinepill hidden" id="onlinePill" data-goto="rooms" aria-label="Wer ist online? Zu den Live-Räumen"><span class="dot"></span><span id="onlineText">online</span></button>
       <span class="savepill" id="savePill" data-state="saved" role="status"><span class="dot"></span><span id="saveText">Gespeichert</span></span>
       <span id="userName" class="savepill"></span>
       <button class="btn small ghost" type="button" id="logoutBtn">Abmelden</button>
@@ -356,6 +429,7 @@ tr[data-status="Versendet"]{background:#f1faf4}
 <main class="app">
   <nav class="nav" aria-label="Hauptnavigation">
     <button type="button" data-page="home" class="active">🏠 Start</button>
+    <button type="button" data-page="rooms">🎪 Live-Räume<span class="navbadge hidden" id="roomBadge" aria-label="ungelesene Nachrichten"></span></button>
     <button type="button" data-page="calendar">📅 Adventskalender</button>
     <button type="button" data-page="cards">✉️ Kundenkarten</button>
     <button type="button" data-page="santa">🎁 Wichteln</button>
@@ -382,14 +456,54 @@ tr[data-status="Versendet"]{background:#f1faf4}
         <p class="muted" id="progressSub">Noch keine Kunden erfasst.</p>
         <div class="statgrid" id="statGrid"></div>
       </div>
-      <div class="card span6">
+      <div class="card span4">
         <h3>📌 Meine offenen Karten</h3>
         <div id="focusList"></div>
       </div>
-      <div class="card redcard span6">
+      <div class="card span4 homerooms">
+        <div class="row spread"><h3 style="margin:0">🎪 Gerade da</h3><span class="pill" id="homeOnlineCount">0 online</span></div>
+        <div id="homeRooms" style="margin-top:8px"></div>
+        <button class="btn green" type="button" data-goto="rooms" style="margin-top:12px">Zu den Live-Räumen</button>
+      </div>
+      <div class="card redcard span4">
         <h3>🎁 Wichteln</h3>
         <p id="homeSanta">Noch nicht ausgelost.</p>
         <button class="btn gold" type="button" data-goto="santa">Zum Wichteln</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="page-rooms" class="page" aria-label="Live-Räume">
+    <div id="roomsNotice" class="notice warn hidden" role="status"></div>
+    <div class="grid">
+      <div class="card snowy span4">
+        <h2>🎪 Live-Räume</h2>
+        <p class="muted" style="margin:0">Schau, wer gerade da ist, plaudere mit und schick Reaktionen in Echtzeit.</p>
+        <div id="roomList" class="roomlist"></div>
+        <p class="lobby" id="lobbyText"></p>
+      </div>
+      <div class="card span8 roomstage" id="roomStage">
+        <div id="roomEmpty" class="empty" style="margin:22px">👈 Wähle einen Raum, um einzutreten. Die anderen sehen dann, dass du da bist.</div>
+        <div id="roomActive" class="hidden">
+          <div class="roomhead roomscene" id="roomHead">
+            <span class="glow" id="roomGlow" aria-hidden="true"></span>
+            <div class="row spread" style="align-items:flex-start;position:relative">
+              <div><h2 id="roomTitle"></h2><p id="roomDesc"></p></div>
+              <button class="btn small ghost" type="button" id="leaveRoomBtn">🚪 Raum verlassen</button>
+            </div>
+            <div id="roomPeople" class="people" aria-label="Im Raum"></div>
+          </div>
+          <div class="chatwrap">
+            <div id="chatLog" class="chatlog" role="log" aria-label="Chat-Verlauf" tabindex="0"></div>
+            <div id="reactLayer" class="reactlayer" aria-hidden="true"></div>
+          </div>
+          <div id="reactBar" class="reactbar" role="group" aria-label="Reaktion senden"></div>
+          <form id="chatForm" class="chatform" novalidate>
+            <label class="sr-only" for="chatInput">Nachricht</label>
+            <input id="chatInput" maxlength="500" autocomplete="off" placeholder="Nachricht an den Raum …">
+            <button class="btn" type="submit" id="chatSend">Senden</button>
+          </form>
+        </div>
       </div>
     </div>
   </section>
@@ -501,8 +615,13 @@ tr[data-status="Versendet"]{background:#f1faf4}
         <p><span class="pill" id="modeBadge"></span></p>
         <p class="muted" id="modeText"></p>
       </div>
+      <div class="card span6">
+        <h3>🩺 Diagnose</h3>
+        <ul class="diag" id="diagList"></ul>
+      </div>
       <div class="card span12" id="publishCard">
         <h3>🚀 Fürs Team veröffentlichen – nur diese eine Datei</h3>
+        <div class="notice"><b>Neu in Version 0.4.0: Live-Räume.</b> Die Firestore-Regeln haben dafür neue Abschnitte (<code>presence</code> und <code>rooms</code>). Nach dem Hochladen der neuen Datei die Regeln unten kopieren und in Firebase veröffentlichen (Schritt 3), sonst bleiben die Räume gesperrt.</div>
         <ol class="rules">
           <li><b>Firebase-Projekt</b> anlegen (console.firebase.google.com). <b>Authentication → E-Mail/Passwort</b> aktivieren. <b>Firestore Database</b> erstellen (Standort z. B. europe-west6 Zürich).</li>
           <li><b>Projekteinstellungen → Allgemein → Web-App hinzufügen</b>. Die Werte <code>apiKey</code>, <code>authDomain</code>, <code>projectId</code> und <code>appId</code> in dieser Datei bei <code>firebaseConfig</code> eintragen (Datei im Editor öffnen, nach «firebaseConfig» suchen).</li>
@@ -510,7 +629,7 @@ tr[data-status="Versendet"]{background:#f1faf4}
           <li><b>GitHub</b>: neues Repository → «Add file → Upload files» → diese Datei als <code>index.html</code> hochladen → <b>Settings → Pages</b> → Branch <code>main</code>, Ordner <code>/ (root)</code> → Save. Die URL lautet <code>https://&lt;konto&gt;.github.io/&lt;repo&gt;/</code>.</li>
           <li><b>Firebase → Authentication → Einstellungen → Autorisierte Domains</b>: <code>&lt;konto&gt;.github.io</code> hinzufügen.</li>
           <li>App öffnen, registrieren, E-Mail bestätigen. In Firestore die Sammlung <code>admins</code> anlegen: Dokument-ID = eigene E-Mail in Kleinbuchstaben, Feld z. B. <code>role: "admin"</code>. Neu anmelden – jetzt ist die Organisation fürs Wichteln sichtbar.</li>
-          <li>Updates: die geänderte <code>index.html</code> im Repository erneut hochladen. Nach etwa einer Minute ist sie live.</li>
+          <li>Updates: Im Repository die bestehende <code>index.html</code> durch die neue Datei ersetzen. Der Name muss exakt <code>index.html</code> lauten (nicht «index (6).html»), sonst bleibt die alte Version online. Nach etwa einer Minute ist sie live, offene Browser zeigen dann einen Hinweis zum Neuladen. Die eigenen Firebase-Werte bei <code>firebaseConfig</code> vorher in die neue Datei übernehmen.</li>
         </ol>
         <div class="field"><label for="rulesText">Firestore-Regeln</label><textarea id="rulesText" readonly spellcheck="false" style="min-height:220px;font-family:Consolas,monospace;font-size:12px"></textarea></div>
         <button class="btn green" type="button" id="copyRulesBtn">📋 Regeln kopieren</button>
@@ -546,16 +665,17 @@ tr[data-status="Versendet"]{background:#f1faf4}
   </div>
 </div>
 <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+<div id="updateBar" class="updatebar hidden" role="status"><span id="updateText"></span><button class="btn small green" type="button" id="updateReloadBtn">Jetzt neu laden</button><button class="btn small light" type="button" id="updateLaterBtn">Später</button></div>
 
 <script type="text/plain" id="firestoreRulesSource">
 rules_version = '2';
-// Winterzauber – Firestore-Regeln. Domain hier UND in CONFIG.allowedEmailDomain anpassen.
+// Winterzauber __VERSION__ – Firestore-Regeln. Die erlaubte Domain kommt aus CONFIG.allowedEmailDomain.
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() {
       return request.auth != null
         && request.auth.token.email_verified == true
-        && request.auth.token.email.lower().matches('.*@wavestone[.]com$');
+        && request.auth.token.email.lower().matches('__EMAIL_RE__');
     }
     function myEmail() { return request.auth.token.email.lower(); }
     function isAdmin() { return signedIn() && exists(/databases/$(database)/documents/admins/$(myEmail())); }
@@ -597,6 +717,37 @@ service cloud.firestore {
     match /santaAssignments/{uid} {
       allow get: if signedIn() && (request.auth.uid == uid || isAdmin());
       allow list, write: if isAdmin();
+    }
+    // Live-Räume: wer ist da (Heartbeat), Chat und Reaktionen
+    match /presence/{uid} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['nickname', 'room', 'online', 'lastSeen'])
+        && str(request.resource.data.nickname, 40) && request.resource.data.nickname.size() > 0
+        && str(request.resource.data.room, 30)
+        && request.resource.data.online is bool
+        && request.resource.data.lastSeen == request.time;
+      allow delete: if signedIn() && (request.auth.uid == uid || isAdmin());
+    }
+    match /rooms/{roomId}/messages/{msgId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && roomId.matches('[a-z0-9-]{1,30}')
+        && request.resource.data.keys().hasOnly(['uid', 'nickname', 'text', 'createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && str(request.resource.data.nickname, 40) && request.resource.data.nickname.size() > 0
+        && str(request.resource.data.text, 1000) && request.resource.data.text.size() > 0
+        && request.resource.data.createdAt == request.time;
+      allow delete: if signedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+    }
+    match /rooms/{roomId}/reactions/{reactionId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && roomId.matches('[a-z0-9-]{1,30}')
+        && request.resource.data.keys().hasOnly(['uid', 'nickname', 'kind', 'createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && str(request.resource.data.nickname, 40)
+        && request.resource.data.kind in [__REACTION_KINDS__]
+        && request.resource.data.createdAt == request.time;
+      allow delete: if isAdmin();
     }
     match /{document=**} {
       allow read, write: if false;
@@ -916,10 +1067,65 @@ const WZCore = (function () {
     'Persönlicher Tipp: Ergänze einen konkreten Moment aus dem Projekt – z. B. «Der Workshop im Mai bleibt uns in bester Erinnerung.»'
   ];
 
+  /* ---------- Live-Räume ---------- */
+  function isRoomId(id) { return typeof id === 'string' && /^[a-z0-9-]{1,30}$/.test(id); }
+
+  function cleanMessage(v, n) {
+    return String(v == null ? '' : v).replace(/\r\n?/g, '\n').replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, '')
+      .replace(/\n{3,}/g, '\n\n').trim().slice(0, n || 500);
+  }
+
+  /** 'active' | 'away' | 'offline' – based on the last heartbeat (server time). */
+  function presenceStatus(p, serverNow, cfg) {
+    if (!p || typeof p !== 'object') return 'offline';
+    if (p.bot === true) return 'active';
+    if (p.online === false) return 'offline';
+    if (p.pending || typeof p.lastSeenMs !== 'number') return 'active';
+    const age = serverNow - p.lastSeenMs;
+    if (age <= cfg.awayAfterMs) return 'active';
+    if (age <= cfg.offlineAfterMs) return 'away';
+    return 'offline';
+  }
+
+  /** Groups online people by room. Unknown rooms count as lobby. */
+  function occupancy(presence, serverNow, cfg, roomIds) {
+    const rooms = {}; (roomIds || []).forEach(r => { rooms[r] = []; });
+    const lobby = [], online = [], seen = new Set();
+    (presence || []).forEach(p => {
+      if (!p || !p.uid || seen.has(p.uid) || !clean(p.nickname)) return;
+      const status = presenceStatus(p, serverNow, cfg);
+      if (status === 'offline') return;
+      seen.add(p.uid);
+      const e = { uid: p.uid, nickname: clean(p.nickname, 40), room: isRoomId(p.room) ? p.room : '', status };
+      online.push(e);
+      if (e.room && rooms[e.room]) rooms[e.room].push(e); else lobby.push(e);
+    });
+    const order = (a, b) => (a.status === b.status ? 0 : a.status === 'active' ? -1 : 1) || a.nickname.localeCompare(b.nickname, 'de');
+    Object.keys(rooms).forEach(k => rooms[k].sort(order));
+    lobby.sort(order); online.sort(order);
+    return { rooms, lobby, online };
+  }
+
+  function compareVersions(a, b) {
+    const pa = String(a || '').split('.').map(Number), pb = String(b || '').split('.').map(Number);
+    for (let i = 0; i < 3; i++) { const d = (pa[i] || 0) - (pb[i] || 0); if (d) return d > 0 ? 1 : -1; }
+    return 0;
+  }
+
+  function avatarColor(seed) {
+    const colors = ['#0f4d36', '#b3122e', '#8b6114', '#2b6cb0', '#6b3fa0', '#0e7490', '#a0522d'];
+    let x = 0; const s = String(seed || '');
+    for (let i = 0; i < s.length; i++) x = (x * 31 + s.charCodeAt(i)) >>> 0;
+    return colors[x % colors.length];
+  }
+
+  function initial(name) { return (Array.from(clean(name, 40))[0] || '?').toUpperCase(); }
+
   return {
     STATUSES, CARD_TEXTS, INSPIRATIONS, QUIZ, CHALLENGES, pad, dateKeyInZone, isDayKey, addDaysKey, calendarDays, isDoorOpenable, daysUntil,
     formatDayKey, monthName, clean, cleanMulti, normalizeStatus, normalizeCustomerRow, dedupeImport, parseCSV, toCSV, progress,
-    mulberry32, shuffle, makeDraw, isAllowedEmail, sha256Hex, adventContent, dailyInspiration
+    mulberry32, shuffle, makeDraw, isAllowedEmail, sha256Hex, adventContent, dailyInspiration,
+    isRoomId, cleanMessage, presenceStatus, occupancy, compareVersions, avatarColor, initial
   };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = WZCore;
@@ -929,7 +1135,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = WZCore;
 'use strict';
 /* ======================= CONFIG ======================= */
 const CONFIG = {
-  version: '0.3.0',
+  version: '0.4.0',
   // 'auto' = Firebase on *.web.app / *.firebaseapp.com or when firebaseConfig.apiKey is set, otherwise local mode.
   mode: 'auto',
   firebaseSdkVersion: '12.19.0',
@@ -948,7 +1154,25 @@ const CONFIG = {
   features: { snow: true, sleigh: true },
   snowflakes: 36,
   maxCustomers: 2000,
-  maxImportBytes: 10 * 1024 * 1024
+  maxImportBytes: 10 * 1024 * 1024,
+  // Live-Räume. IDs nur a–z, 0–9 und Bindestrich.
+  rooms: [
+    { id: 'kamin', icon: '🔥', name: 'Kaminzimmer', desc: 'Plaudern bei Kerzenschein und Punsch.' },
+    { id: 'baeckerei', icon: '🍪', name: 'Guetzli-Bäckerei', desc: 'Rezepte, Pausen und süsse Ideen.' },
+    { id: 'werkstatt', icon: '✉️', name: 'Kartenwerkstatt', desc: 'Gemeinsam an den Kundenkarten schreiben.' },
+    { id: 'wichtelstube', icon: '🎁', name: 'Wichtelstube', desc: 'Geschenktipps, Rätsel und Vorfreude.' }
+  ],
+  // Reaktionen: Die IDs stehen auch in den Firestore-Regeln (werden im Setup automatisch eingesetzt).
+  reactions: [
+    { id: 'party', e: '🎉', label: 'Feiern' }, { id: 'clap', e: '👏', label: 'Applaus' }, { id: 'heart', e: '❤️', label: 'Herz' },
+    { id: 'laugh', e: '😂', label: 'Lachen' }, { id: 'tree', e: '🎄', label: 'Tannenbaum' }, { id: 'snowman', e: '⛄', label: 'Schneemann' },
+    { id: 'cookie', e: '🍪', label: 'Guetzli' }, { id: 'bell', e: '🔔', label: 'Glocke' }
+  ],
+  // Heartbeat nur bei sichtbarem Tab und Aktivität. Nach awayAfterMs «abwesend», nach offlineAfterMs ausgeblendet.
+  presence: { heartbeatMs: 60000, awayAfterMs: 150000, offlineAfterMs: 300000, idleAfterMs: 15 * 60000 },
+  chatLimit: 60,
+  maxMessageLength: 500,
+  versionCheckMs: 10 * 60000
 };
 
 /* ======================= SAFETY NET ======================= */
@@ -1009,8 +1233,12 @@ function sanitizeCustomer(c) {
 /* ======================= LOCAL STORE ======================= */
 function LocalStore() {
   const LOCAL_USER = { uid: 'local', email: 'lokal@demo', verified: true };
-  let authCb = () => {}, listener = null, sessionOk = Safe.get('wz-session', 'session') === 'ok', fails = 0, lockedUntil = 0;
-  const empty = () => ({ schema: 2, profiles: {}, customers: [], santa: { config: { budget: '25 CHF', date: '', drawnAt: null }, assignments: {} }, calendar: {} });
+  let authCb = () => {}, sessionOk = Safe.get('wz-session', 'session') === 'ok', fails = 0, lockedUntil = 0;
+  const listeners = new Set();
+  const empty = () => ({ schema: 2, profiles: {}, customers: [], santa: { config: { budget: '25 CHF', date: '', drawnAt: null }, assignments: {} }, calendar: {}, presence: {}, rooms: {} });
+  const reactionIds = () => CONFIG.reactions.map(r => r.id);
+  function cleanMsg(m) { return { id: C.clean(m.id, 60) || newLocalId(), uid: C.clean(m.uid, 60), nickname: C.clean(m.nickname, 40), text: C.cleanMessage(m.text, CONFIG.maxMessageLength), createdAt: typeof m.createdAt === 'number' ? m.createdAt : 0 }; }
+  function cleanReact(m) { return { id: C.clean(m.id, 60) || newLocalId(), uid: C.clean(m.uid, 60), nickname: C.clean(m.nickname, 40), kind: m.kind, createdAt: typeof m.createdAt === 'number' ? m.createdAt : 0 }; }
 
   function validate(x) {
     if (!x || typeof x !== 'object') return null;
@@ -1021,6 +1249,18 @@ function LocalStore() {
     if (s.config && typeof s.config === 'object') d.santa.config = { budget: C.clean(s.config.budget, 30), date: C.isDayKey(s.config.date) ? s.config.date : '', drawnAt: typeof s.config.drawnAt === 'number' ? s.config.drawnAt : null };
     if (s.assignments && typeof s.assignments === 'object') Object.keys(s.assignments).forEach(g => { const a = s.assignments[g]; if (a && a.receiverUid) d.santa.assignments[g] = { giverUid: g, giverNickname: C.clean(a.giverNickname, 40), receiverUid: C.clean(a.receiverUid, 60), receiverNickname: C.clean(a.receiverNickname, 40), receiverPreferences: C.cleanMulti(a.receiverPreferences, 300), receiverQuote: C.cleanMulti(a.receiverQuote, 220) }; });
     if (x.calendar && typeof x.calendar === 'object') Object.keys(x.calendar).forEach(uid => { const o = x.calendar[uid]; if (o && Array.isArray(o.opened)) d.calendar[uid] = { opened: o.opened.filter(C.isDayKey).slice(0, 120) }; });
+    if (x.presence && typeof x.presence === 'object' && !Array.isArray(x.presence)) Object.keys(x.presence).forEach(uid => {
+      const p = x.presence[uid];
+      if (p && typeof p === 'object' && C.clean(p.nickname)) d.presence[C.clean(uid, 60)] = { nickname: C.clean(p.nickname, 40), room: C.isRoomId(p.room) ? p.room : '', online: p.online !== false, lastSeen: typeof p.lastSeen === 'number' ? p.lastSeen : 0, bot: p.bot === true };
+    });
+    if (x.rooms && typeof x.rooms === 'object' && !Array.isArray(x.rooms)) Object.keys(x.rooms).forEach(r => {
+      const o = x.rooms[r];
+      if (!C.isRoomId(r) || !o || typeof o !== 'object') return;
+      d.rooms[r] = {
+        messages: (Array.isArray(o.messages) ? o.messages : []).filter(m => m && typeof m === 'object' && C.cleanMessage(m.text)).slice(-200).map(cleanMsg),
+        reactions: (Array.isArray(o.reactions) ? o.reactions : []).filter(m => m && typeof m === 'object' && reactionIds().includes(m.kind)).slice(-30).map(cleanReact)
+      };
+    });
     return d;
   }
   function migrateV1(x) {
@@ -1040,11 +1280,18 @@ function LocalStore() {
     return empty();
   }
   let data = load();
-  function persist() {
+  // ch = which listeners need to hear about it ('main', 'presence', 'room:<id>'); empty = all.
+  function persist(ch) {
     if (!Safe.set(CONFIG.storageKey, JSON.stringify(data))) throw new Error('Speichern im Browser nicht möglich (Speicher blockiert oder voll).');
-    emit();
+    emit(ch);
   }
-  function emit() { if (listener) listener(); }
+  function emit(ch) {
+    Array.from(listeners).forEach(l => {
+      if (ch && l.ch !== ch) return;
+      try { l.fn(); } catch (e) { window.WZ_ERRORS.push(String((e && e.message) || e)); }
+    });
+  }
+  function room(id) { if (!data.rooms[id]) data.rooms[id] = { messages: [], reactions: [] }; return data.rooms[id]; }
   window.addEventListener('storage', e => { if (e.key === CONFIG.storageKey) { data = load(); emit(); } });
   const copy = x => JSON.parse(JSON.stringify(x));
   const run = fn => new Promise((res, rej) => { try { fn(); res(); } catch (e) { rej(e); } });
@@ -1057,31 +1304,66 @@ function LocalStore() {
       if (C.sha256Hex(String(pw || '')) !== CONFIG.localPasswordSha256) { fails++; if (fails >= 5) { lockedUntil = Date.now() + 30000; fails = 0; } throw new Error('Falsches Passwort.'); }
       fails = 0; sessionOk = true; Safe.set('wz-session', 'ok', 'session'); authCb(LOCAL_USER);
     },
-    async logout() { listener = null; sessionOk = false; Safe.del('wz-session', 'session'); authCb(null); },
+    async logout() { listeners.clear(); sessionOk = false; Safe.del('wz-session', 'session'); authCb(null); },
     async checkAdmin() { return true; },
     subscribe(uid, isAdmin, hd) {
-      listener = () => {
+      const main = { ch: 'main', fn: () => {
         hd.profiles(Object.keys(data.profiles).map(k => Object.assign({ uid: k }, copy(data.profiles[k]))));
         hd.customers(copy(data.customers));
         hd.santaConfig(copy(data.santa.config));
         hd.myAssignment(data.santa.assignments[uid] ? copy(data.santa.assignments[uid]) : null);
         hd.allAssignments(Object.values(copy(data.santa.assignments)));
         hd.calendar((data.calendar[uid] || { opened: [] }).opened.slice());
-      };
-      listener();
-      return () => { listener = null; };
+      } };
+      const pres = { ch: 'presence', fn: () => hd.presence(Object.keys(data.presence).map(k => {
+        const p = data.presence[k];
+        return { uid: k, nickname: p.nickname, room: p.room, online: p.online, lastSeenMs: p.lastSeen, bot: p.bot, pending: false };
+      })) };
+      listeners.add(main); listeners.add(pres);
+      main.fn(); pres.fn();
+      return () => { listeners.delete(main); listeners.delete(pres); };
     },
-    saveProfile: (uid, p) => run(() => { data.profiles[uid] = sanitizeProfile(p); persist(); }),
-    deleteProfile: uid => run(() => { delete data.profiles[uid]; persist(); }),
+    subscribeRoom(roomId, hd) {
+      const l = { ch: 'room:' + roomId, fn: () => {
+        const r = data.rooms[roomId] || { messages: [], reactions: [] };
+        hd.messages(r.messages.slice(-CONFIG.chatLimit).map(m => Object.assign({ createdAtMs: m.createdAt, pending: false }, m)));
+        hd.reactions(r.reactions.slice(-15).map(m => Object.assign({ createdAtMs: m.createdAt }, m)));
+      } };
+      listeners.add(l);
+      setTimeout(() => { if (listeners.has(l)) l.fn(); }, 0);
+      return () => { listeners.delete(l); };
+    },
+    setPresence: (uid, p) => run(() => {
+      data.presence[uid] = { nickname: C.clean(p.nickname, 40), room: C.isRoomId(p.room) ? p.room : '', online: p.online !== false, lastSeen: Date.now(), bot: false };
+      persist('presence');
+    }),
+    sendMessage: (roomId, m) => run(() => {
+      if (!C.isRoomId(roomId)) throw new Error('Unbekannter Raum.');
+      const r = room(roomId);
+      r.messages.push(cleanMsg({ uid: LOCAL_USER.uid, nickname: m.nickname, text: m.text, createdAt: Date.now() }));
+      r.messages = r.messages.slice(-200);
+      persist('room:' + roomId);
+    }),
+    deleteMessage: (roomId, id) => run(() => { const r = room(roomId); r.messages = r.messages.filter(x => x.id !== id); persist('room:' + roomId); }),
+    newReactionId: () => newLocalId(),
+    sendReaction: (roomId, id, x) => run(() => {
+      if (!C.isRoomId(roomId) || !reactionIds().includes(x.kind)) throw new Error('Unbekannte Reaktion.');
+      const r = room(roomId);
+      r.reactions.push(cleanReact({ id, uid: LOCAL_USER.uid, nickname: x.nickname, kind: x.kind, createdAt: Date.now() }));
+      r.reactions = r.reactions.slice(-30);
+      persist('room:' + roomId);
+    }),
+    saveProfile: (uid, p) => run(() => { data.profiles[uid] = sanitizeProfile(p); persist('main'); }),
+    deleteProfile: uid => run(() => { delete data.profiles[uid]; persist('main'); }),
     newCustomerId: () => newLocalId(),
-    createCustomer: (id, c) => run(() => { if (data.customers.length >= CONFIG.maxCustomers) throw new Error('Maximal ' + CONFIG.maxCustomers + ' Kunden.'); data.customers.push(Object.assign({ id }, sanitizeCustomer(c))); persist(); }),
-    updateCustomerField: (id, field, value) => run(() => { const c = data.customers.find(x => x.id === id); if (!c) throw new Error('Kunde nicht mehr vorhanden.'); Object.assign(c, sanitizeCustomer(Object.assign({}, c, { [field]: value }))); persist(); }),
-    deleteCustomer: id => run(() => { data.customers = data.customers.filter(x => x.id !== id); persist(); }),
-    addCustomers: list => run(() => { const room = CONFIG.maxCustomers - data.customers.length; if (list.length > room) throw new Error('Maximal ' + CONFIG.maxCustomers + ' Kunden.'); list.forEach(c => data.customers.push(Object.assign({ id: newLocalId() }, sanitizeCustomer(c)))); persist(); }),
-    saveCalendar: (uid, opened) => run(() => { data.calendar[uid] = { opened: opened.filter(C.isDayKey).slice(0, 120) }; persist(); }),
-    saveSantaConfig: cfg => run(() => { data.santa.config = Object.assign({}, data.santa.config, { budget: C.clean(cfg.budget, 30), date: C.isDayKey(cfg.date) ? cfg.date : '' }); persist(); }),
-    writeDraw: (assignments, cfg) => run(() => { data.santa.assignments = {}; assignments.forEach(a => { data.santa.assignments[a.giverUid] = a; }); data.santa.config = Object.assign({}, data.santa.config, { budget: C.clean(cfg.budget, 30), date: C.isDayKey(cfg.date) ? cfg.date : '', drawnAt: Date.now() }); persist(); }),
-    resetDraw: () => run(() => { data.santa.assignments = {}; data.santa.config.drawnAt = null; persist(); }),
+    createCustomer: (id, c) => run(() => { if (data.customers.length >= CONFIG.maxCustomers) throw new Error('Maximal ' + CONFIG.maxCustomers + ' Kunden.'); data.customers.push(Object.assign({ id }, sanitizeCustomer(c))); persist('main'); }),
+    updateCustomerField: (id, field, value) => run(() => { const c = data.customers.find(x => x.id === id); if (!c) throw new Error('Kunde nicht mehr vorhanden.'); Object.assign(c, sanitizeCustomer(Object.assign({}, c, { [field]: value }))); persist('main'); }),
+    deleteCustomer: id => run(() => { data.customers = data.customers.filter(x => x.id !== id); persist('main'); }),
+    addCustomers: list => run(() => { const room = CONFIG.maxCustomers - data.customers.length; if (list.length > room) throw new Error('Maximal ' + CONFIG.maxCustomers + ' Kunden.'); list.forEach(c => data.customers.push(Object.assign({ id: newLocalId() }, sanitizeCustomer(c)))); persist('main'); }),
+    saveCalendar: (uid, opened) => run(() => { data.calendar[uid] = { opened: opened.filter(C.isDayKey).slice(0, 120) }; persist('main'); }),
+    saveSantaConfig: cfg => run(() => { data.santa.config = Object.assign({}, data.santa.config, { budget: C.clean(cfg.budget, 30), date: C.isDayKey(cfg.date) ? cfg.date : '' }); persist('main'); }),
+    writeDraw: (assignments, cfg) => run(() => { data.santa.assignments = {}; assignments.forEach(a => { data.santa.assignments[a.giverUid] = a; }); data.santa.config = Object.assign({}, data.santa.config, { budget: C.clean(cfg.budget, 30), date: C.isDayKey(cfg.date) ? cfg.date : '', drawnAt: Date.now() }); persist('main'); }),
+    resetDraw: () => run(() => { data.santa.assignments = {}; data.santa.config.drawnAt = null; persist('main'); }),
     exportData: () => JSON.stringify(data, null, 2),
     importData: text => run(() => { const v = validate(JSON.parse(text)); if (!v || (!Object.keys(v.profiles).length && !v.customers.length)) throw new Error('Ungültiges oder leeres Backup.'); data = v; persist(); }),
     resetAll: () => run(() => { data = empty(); persist(); }),
@@ -1095,6 +1377,15 @@ function LocalStore() {
       const me = data.profiles.local.nickname;
       [['Musterkunde Nord AG', 'Anna Beispiel', me, 'In Arbeit', 'Persönlicher Dank für Projekt X'], ['Musterkunde Süd', 'Max Muster', 'Tannenbaum', 'Versendet', ''], ['Stadt Musterhausen', 'Dr. Eva Probe', me, 'Offen', 'Auf Deutsch, förmlich'], ['Kanton Beispiel', 'Leo Test', 'Zimtstern', 'Geschrieben', ''], ['Verband Muster', 'Mia Demo', '', 'Offen', '']]
         .forEach(r => data.customers.push(Object.assign({ id: newLocalId() }, sanitizeCustomer({ customer: r[0], contact: r[1], owner: r[2], status: r[3], note: r[4] }))));
+      // Demo-Gäste für die Live-Räume (bleiben im lokalen Modus «online»)
+      const now = Date.now();
+      [['demo-1', 'Tannenbaum', 'kamin'], ['demo-2', 'Zimtstern', 'kamin'], ['demo-3', 'Schneeflocke', 'baeckerei']]
+        .forEach(([uid, nickname, r]) => { data.presence[uid] = { nickname, room: r, online: true, lastSeen: now, bot: true }; });
+      if (!room('kamin').messages.length) room('kamin').messages.push(
+        cleanMsg({ uid: 'demo-1', nickname: 'Tannenbaum', text: 'Hallo zusammen! Wer hat dieses Jahr schon Guetzli gebacken? 🍪', createdAt: now - 9 * 60000 }),
+        cleanMsg({ uid: 'demo-2', nickname: 'Zimtstern', text: 'Ich! Zimtsterne natürlich. Das Rezept stelle ich in die Bäckerei.', createdAt: now - 7 * 60000 }));
+      if (!room('baeckerei').messages.length) room('baeckerei').messages.push(
+        cleanMsg({ uid: 'demo-3', nickname: 'Schneeflocke', text: 'Tipp: Mailänderli-Teig über Nacht kühl stellen, dann lässt er sich viel besser ausstechen.', createdAt: now - 30 * 60000 }));
       persist();
     })
   };
@@ -1123,6 +1414,10 @@ function FirebaseStore(fb, cfg) {
   const toUser = u => u ? { uid: u.uid, email: String(u.email || '').toLowerCase(), verified: !!u.emailVerified } : null;
   const stop = () => { unsubs.forEach(f => { try { f(); } catch (e) { /* ignore */ } }); unsubs = []; };
   const ts = () => fb.serverTimestamp();
+  const tsMs = v => v && typeof v.toMillis === 'function' ? v.toMillis() : (typeof v === 'number' ? v : null);
+  const EST = { serverTimestamps: 'estimate' };
+  const pending = d => !!(d.metadata && d.metadata.hasPendingWrites);
+  const roomCol = (roomId, name) => fb.collection(db, 'rooms', roomId, name);
   return {
     kind: 'firebase',
     onAuth(cb) { fb.onAuthStateChanged(auth, u => cb(toUser(u))); },
@@ -1143,8 +1438,24 @@ function FirebaseStore(fb, cfg) {
       unsubs.push(fb.onSnapshot(fb.doc(db, 'calendar', uid), s => hd.calendar(s.exists() && Array.isArray(s.data().opened) ? s.data().opened.filter(C.isDayKey) : []), err));
       if (isAdmin) unsubs.push(fb.onSnapshot(fb.collection(db, 'santaAssignments'), s => hd.allAssignments(s.docs.map(d => d.data())), err));
       else hd.allAssignments([]);
+      unsubs.push(fb.onSnapshot(fb.collection(db, 'presence'), s => hd.presence(s.docs.map(d => {
+        const x = d.data(EST) || {};
+        return { uid: d.id, nickname: C.clean(x.nickname, 40), room: C.isRoomId(x.room) ? x.room : '', online: x.online !== false, lastSeenMs: tsMs(x.lastSeen), pending: pending(d) };
+      })), e => hd.presenceError(e)));
       return stop;
     },
+    subscribeRoom(roomId, hd) {
+      const msg = d => { const x = d.data(EST) || {}; return { id: d.id, uid: C.clean(x.uid, 60), nickname: C.clean(x.nickname, 40), text: C.cleanMessage(x.text, CONFIG.maxMessageLength), createdAtMs: tsMs(x.createdAt), pending: pending(d) }; };
+      const react = d => { const x = d.data(EST) || {}; return { id: d.id, uid: C.clean(x.uid, 60), nickname: C.clean(x.nickname, 40), kind: x.kind, createdAtMs: tsMs(x.createdAt) }; };
+      const u1 = fb.onSnapshot(fb.query(roomCol(roomId, 'messages'), fb.orderBy('createdAt', 'desc'), fb.limit(CONFIG.chatLimit)), s => hd.messages(s.docs.map(msg).reverse()), e => hd.error(e));
+      const u2 = fb.onSnapshot(fb.query(roomCol(roomId, 'reactions'), fb.orderBy('createdAt', 'desc'), fb.limit(15)), s => hd.reactions(s.docs.map(react).reverse()), e => hd.error(e));
+      return () => { [u1, u2].forEach(f => { try { f(); } catch (e) { /* ignore */ } }); };
+    },
+    setPresence: (uid, p) => fb.setDoc(fb.doc(db, 'presence', uid), { nickname: C.clean(p.nickname, 40), room: C.isRoomId(p.room) ? p.room : '', online: p.online !== false, lastSeen: ts() }),
+    sendMessage: (roomId, m) => fb.addDoc(roomCol(roomId, 'messages'), { uid: auth.currentUser.uid, nickname: C.clean(m.nickname, 40), text: C.cleanMessage(m.text, CONFIG.maxMessageLength), createdAt: ts() }),
+    deleteMessage: (roomId, id) => fb.deleteDoc(fb.doc(db, 'rooms', roomId, 'messages', id)),
+    newReactionId: roomId => fb.doc(roomCol(roomId, 'reactions')).id,
+    sendReaction: (roomId, id, x) => fb.setDoc(fb.doc(db, 'rooms', roomId, 'reactions', id), { uid: auth.currentUser.uid, nickname: C.clean(x.nickname, 40), kind: x.kind, createdAt: ts() }),
     saveProfile: (uid, p) => fb.setDoc(fb.doc(db, 'profiles', uid), Object.assign(sanitizeProfile(p, auth.currentUser && auth.currentUser.email), { updatedAt: ts() })),
     deleteProfile: uid => fb.deleteDoc(fb.doc(db, 'profiles', uid)),
     newCustomerId: () => fb.doc(fb.collection(db, 'customers')).id,
@@ -1183,7 +1494,11 @@ const S = {
   store: null, mode: 'local', user: null, isAdmin: false,
   profiles: [], customers: [], santaConfig: { budget: '', date: '', drawnAt: null }, myAssignment: null, allAssignments: [], opened: [],
   page: 'home', search: '', filter: 'all', pendingCustomerRender: false, profileDirty: false, revealed: false, focusNewId: null,
-  today: '', authMode: 'login', unsub: null, profilesLoaded: false
+  today: '', authMode: 'login', unsub: null, profilesLoaded: false, fbProject: '',
+  // Live-Räume
+  presence: [], serverOffset: 0, ackWait: false, presenceStarted: false, roomsDenied: false, roomsChecked: false, lastActivity: Date.now(),
+  room: '', roomUnsub: null, roomMsgs: [], roomEvents: [], roomLoaded: false, reactLoaded: false, msgIds: new Set(), reactSeen: new Set(),
+  prevRoomPeople: null, unread: 0, forceScroll: false
 };
 const timers = {};
 let pendingSaves = 0;
@@ -1237,6 +1552,10 @@ function nav(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + page));
   document.querySelectorAll('.nav button').forEach(b => b.classList.toggle('active', b.dataset.page === page));
   if (page === 'profile') fillProfileForm(false);
+  if (page === 'rooms') {
+    if (!document.hidden && S.unread) { S.unread = 0; updateUnread(); }
+    S.forceScroll = true; renderRoomList(); renderRoomStage();
+  }
   try { $('page-' + page).scrollIntoView({ block: 'nearest' }); } catch (e) { /* ignore */ }
 }
 
@@ -1289,8 +1608,18 @@ function setupLoginUI() {
   $('verifyLogoutBtn').onclick = () => S.store.logout().catch(err => toast(errMsg(err)));
 }
 
+async function signOut() {
+  const wasRoom = S.room;
+  stopRoom(); S.room = ''; Safe.del('wz-room', 'session');
+  if (wasRoom || S.presenceStarted) await Promise.race([presenceOffline(), new Promise(r => setTimeout(r, 1500))]);
+  await S.store.logout();
+}
+
 async function onAuthChanged(user) {
   if (S.unsub) { S.unsub(); S.unsub = null; }
+  stopRoom(); S.room = '';
+  if (!user || !S.user || S.user.uid !== user.uid) { S.presence = []; S.roomsDenied = false; S.roomsChecked = false; S.serverOffset = 0; S.ackWait = false; }
+  S.presenceStarted = false; resetRoomState(); updateUnread();
   S.user = user; S.revealed = false; S.profileDirty = false; S.profilesLoaded = false;
   if (!user) { showView('loginView'); setTimeout(() => { try { (S.mode === 'firebase' ? $('loginEmail') : $('loginPassword')).focus(); } catch (e) { /* ignore */ } }, 50); return; }
   if (S.mode === 'firebase' && !user.verified) { $('verifyEmail').textContent = user.email; $('verifyError').textContent = ''; showView('verifyView'); return; }
@@ -1304,7 +1633,16 @@ async function onAuthChanged(user) {
       S.profiles = list.filter(p => p && C.clean(p.nickname)); S.profilesLoaded = true;
       if (first && !me()) nav('profile');
       renderHeader(); renderHome(); renderSanta(); renderOwnerList(); renderProfilePreview(); if (S.page === 'profile') fillProfileForm(false); requestCustomerRender();
+      if (me() && !S.presenceStarted) {
+        // Präsenz starten und nach einem Neuladen in den letzten Raum zurückkehren
+        S.presenceStarted = true;
+        const last = S.room || Safe.get('wz-room', 'session');
+        if (last && roomById(last) && !S.room) joinRoom(last, true); else presenceTick(true);
+      }
+      renderPresence(); renderRoomStage();
     },
+    presence: onPresence,
+    presenceError: handleRoomsError,
     customers: list => { S.customers = list; renderHome(); requestCustomerRender(); },
     santaConfig: cfg => { S.santaConfig = cfg || {}; renderSanta(); renderHome(); },
     myAssignment: a => { S.myAssignment = a; renderSanta(); renderHome(); },
@@ -1612,25 +1950,355 @@ async function saveProfile(e) {
     $('profileSavedHint').textContent = '✓ Gespeichert um ' + new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' });
     if (oldNick && oldNick !== p.nickname) S.customers.filter(c => c.owner === oldNick).forEach(c => saveField(c.id, 'owner', p.nickname));
     renderHeader(); renderHome();
+    if (S.presenceStarted && oldNick !== p.nickname) presenceTick(true);
+    renderPresence();
   }
 }
 
+/* ======================= LIVE-RÄUME ======================= */
+const ROOM_IDS = CONFIG.rooms.map(r => r.id);
+const BASE_TITLE = document.title;
+const roomById = id => CONFIG.rooms.find(r => r.id === id) || null;
+const reactionById = id => CONFIG.reactions.find(r => r.id === id) || null;
+const serverNow = () => Date.now() + S.serverOffset;
+const isMe = uid => !!(S.user && uid === S.user.uid);
+let lastPresenceWrite = 0, presenceBusy = false, lastReactAt = 0, lastChatAt = 0;
+
+function roomsAvailable() { return !!(S.user && S.store && S.store.setPresence && !S.roomsDenied); }
+function occ() {
+  // Eigener Eintrag sofort aus dem lokalen Zustand, damit Raumwechsel ohne Verzögerung sichtbar sind.
+  let list = S.presence;
+  if (roomsAvailable() && me()) list = list.filter(p => !isMe(p.uid)).concat([{ uid: S.user.uid, nickname: myNick(), room: S.room, online: true, pending: true }]);
+  return C.occupancy(list, serverNow(), CONFIG.presence, ROOM_IDS);
+}
+function isDenied(e) { return !!e && (e.code === 'permission-denied' || /insufficient permissions|permission-denied/i.test(String(e.message || ''))); }
+function handleRoomsError(e) {
+  if (S.mode === 'firebase' && isDenied(e)) {
+    if (!S.roomsDenied) { S.roomsDenied = true; stopRoom(); renderPresence(); renderRoomStage(); renderSetup(); }
+    return;
+  }
+  toast('⚠️ ' + errMsg(e));
+}
+
+/* --- Präsenz: Heartbeat nur bei sichtbarem Tab und Aktivität --- */
+function presenceTick(force) {
+  if (!roomsAvailable() || !me()) return;
+  if (!force && (document.hidden || Date.now() - S.lastActivity > CONFIG.presence.idleAfterMs || presenceBusy)) return;
+  presenceBusy = true; lastPresenceWrite = Date.now();
+  Promise.resolve().then(() => S.store.setPresence(S.user.uid, { nickname: myNick(), room: S.room, online: true }))
+    .then(() => { if (!S.roomsChecked) { S.roomsChecked = true; renderSetup(); } }, handleRoomsError)
+    .then(() => { presenceBusy = false; });
+}
+function presenceOffline() {
+  if (!roomsAvailable() || !me()) return Promise.resolve();
+  return Promise.resolve().then(() => S.store.setPresence(S.user.uid, { nickname: myNick(), room: '', online: false })).catch(() => {});
+}
+function onPresence(list) {
+  const mine = S.user && list.find(p => isMe(p.uid));
+  if (mine && S.mode === 'firebase') {
+    // Uhrzeit-Abgleich: Serverzeit des eigenen Heartbeats minus lokaler Sendezeit
+    if (mine.pending) S.ackWait = true;
+    else if (S.ackWait && typeof mine.lastSeenMs === 'number' && lastPresenceWrite) {
+      S.ackWait = false;
+      const cand = mine.lastSeenMs - lastPresenceWrite;
+      if (Math.abs(cand) < 30 * 60000) S.serverOffset = cand;
+    }
+  }
+  S.presence = list;
+  trackRoomArrivals();
+  renderPresence();
+}
+function trackRoomArrivals() {
+  if (!S.room) { S.prevRoomPeople = null; return; }
+  const now = new Map((occ().rooms[S.room] || []).map(p => [p.uid, p.nickname]));
+  const prev = S.prevRoomPeople;
+  S.prevRoomPeople = now;
+  if (!prev) return;
+  now.forEach((n, uid) => { if (!isMe(uid) && !prev.has(uid)) addRoomEvent('🚪 ' + n + ' ist reingekommen'); });
+  prev.forEach((n, uid) => { if (!isMe(uid) && !now.has(uid)) addRoomEvent('👋 ' + n + ' ist gegangen'); });
+}
+function addRoomEvent(text) {
+  S.roomEvents.push({ id: 'ev' + Date.now() + Math.random().toString(36).slice(2, 6), ts: serverNow(), text });
+  S.roomEvents = S.roomEvents.slice(-30);
+  renderChat();
+}
+
+/* --- Raum betreten / verlassen --- */
+function stopRoom() { if (S.roomUnsub) { try { S.roomUnsub(); } catch (e) { /* ignore */ } } S.roomUnsub = null; }
+function resetRoomState() {
+  S.roomMsgs = []; S.roomEvents = []; S.roomLoaded = false; S.reactLoaded = false;
+  S.msgIds = new Set(); S.reactSeen = new Set(); S.prevRoomPeople = null; S.unread = 0; S.forceScroll = true;
+  const layer = $('reactLayer'); if (layer) layer.replaceChildren();
+}
+function joinRoom(id, quiet) {
+  if (!roomById(id)) return;
+  if (!roomsAvailable()) { if (!quiet) toast('🔒 Die Live-Räume sind noch nicht freigeschaltet.'); renderRoomStage(); return; }
+  if (!me()) { if (!quiet) { toast('Bitte zuerst dein Profil erstellen.'); nav('profile'); } return; }
+  if (S.room === id) { if (!quiet) { nav('rooms'); focusChat(); } return; }
+  stopRoom();
+  S.room = id; Safe.set('wz-room', id, 'session');
+  resetRoomState();
+  const rid = id;
+  try {
+    S.roomUnsub = S.store.subscribeRoom(rid, {
+      messages: list => { if (S.room === rid) onRoomMessages(list); },
+      reactions: list => { if (S.room === rid) onRoomReactions(list); },
+      error: e => { if (S.room === rid) handleRoomsError(e); }
+    });
+  } catch (e) { handleRoomsError(e); }
+  presenceTick(true);
+  trackRoomArrivals();
+  updateUnread();
+  if (!quiet) nav('rooms');
+  renderPresence(); renderRoomStage();
+  if (!quiet) focusChat();
+}
+function leaveRoom() {
+  if (!S.room) return;
+  stopRoom();
+  S.room = ''; Safe.del('wz-room', 'session');
+  resetRoomState();
+  presenceTick(true);
+  updateUnread(); renderPresence(); renderRoomStage();
+}
+function focusChat() { setTimeout(() => { try { if (window.matchMedia('(pointer:fine)').matches) $('chatInput').focus({ preventScroll: true }); } catch (e) { /* ignore */ } }, 50); }
+
+/* --- Nachrichten und Reaktionen --- */
+function onRoomMessages(list) {
+  const first = !S.roomLoaded;
+  let fresh = 0;
+  list.forEach(m => { if (!S.msgIds.has(m.id)) { S.msgIds.add(m.id); if (!first && !isMe(m.uid)) fresh++; } });
+  S.roomMsgs = list; S.roomLoaded = true;
+  if (first) S.forceScroll = true;
+  if (fresh && (S.page !== 'rooms' || document.hidden)) { S.unread += fresh; updateUnread(); }
+  renderChat();
+}
+function onRoomReactions(list) {
+  const first = !S.reactLoaded;
+  S.reactLoaded = true;
+  list.forEach(r => {
+    if (S.reactSeen.has(r.id)) return;
+    S.reactSeen.add(r.id);
+    const fresh = typeof r.createdAtMs !== 'number' || serverNow() - r.createdAtMs < 30000;
+    if (!first && fresh) floatReaction(r);
+  });
+}
+function floatReaction(r) {
+  const k = reactionById(r.kind), layer = $('reactLayer');
+  if (!k || !layer || !S.room) return;
+  while (layer.childElementCount > 24) layer.firstElementChild.remove();
+  const el = h('span', { class: 'floatreact', style: 'left:' + (6 + Math.random() * 82).toFixed(1) + '%' }, k.e, h('small', { text: isMe(r.uid) ? 'Du' : (r.nickname || '') }));
+  layer.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+function sendReaction(kind) {
+  if (!S.room || !me() || !roomsAvailable() || !reactionById(kind)) return;
+  if (Date.now() - lastReactAt < 600) return;
+  lastReactAt = Date.now();
+  const rid = S.room, id = S.store.newReactionId(rid);
+  S.reactSeen.add(id);
+  floatReaction({ id, kind, uid: S.user.uid, nickname: myNick() });
+  Promise.resolve().then(() => S.store.sendReaction(rid, id, { kind, nickname: myNick() })).catch(handleRoomsError);
+}
+function sendChat(e) {
+  e.preventDefault();
+  if (!S.room || !roomsAvailable()) return;
+  if (!me()) { nav('profile'); return; }
+  const input = $('chatInput');
+  const text = C.cleanMessage(input.value, CONFIG.maxMessageLength);
+  if (!text) return;
+  if (Date.now() - lastChatAt < 800) { toast('Nicht so schnell 😉'); return; }
+  lastChatAt = Date.now(); S.forceScroll = true;
+  input.value = '';
+  const rid = S.room;
+  Promise.resolve().then(() => S.store.sendMessage(rid, { text, nickname: myNick() }))
+    .catch(err => { if (!input.value) input.value = text; handleRoomsError(err); });
+}
+function deleteMsg(m) {
+  if (!window.confirm('Diese Nachricht löschen?')) return;
+  const rid = S.room;
+  S.roomMsgs = S.roomMsgs.filter(x => x.id !== m.id); renderChat();
+  Promise.resolve().then(() => S.store.deleteMessage(rid, m.id)).catch(handleRoomsError);
+}
+function updateUnread() {
+  const b = $('roomBadge');
+  b.textContent = S.unread > 99 ? '99+' : String(S.unread);
+  b.classList.toggle('hidden', !S.unread);
+  document.title = (S.unread ? '(' + S.unread + ') ' : '') + BASE_TITLE;
+}
+
+/* --- Darstellung --- */
+function face(p) {
+  return h('span', { class: 'face' + (p.status === 'away' ? ' away' : ''), style: '--av:' + C.avatarColor(p.uid), title: p.nickname + (p.status === 'away' ? ' (abwesend)' : '') },
+    C.initial(p.nickname), h('span', { class: 'st', 'aria-hidden': 'true' }));
+}
+function faces(list, max) {
+  const out = list.slice(0, max).map(face);
+  if (list.length > max) out.push(h('span', { class: 'face more', text: '+' + (list.length - max) }));
+  return out;
+}
+const youSuffix = p => isMe(p.uid) ? ' (du)' : '';
+function renderPresence() {
+  if (!S.user) return;
+  renderOnlinePill(); renderHomeRooms(); renderRoomList(); renderRoomPeople();
+}
+function renderOnlinePill() {
+  const show = roomsAvailable() && !!me();
+  $('onlinePill').classList.toggle('hidden', !show);
+  if (show) $('onlineText').textContent = occ().online.length + ' online';
+}
+function renderHomeRooms() {
+  const box = $('homeRooms');
+  if (!roomsAvailable()) { $('homeOnlineCount').textContent = '–'; box.replaceChildren(h('p', { class: 'muted', text: S.roomsDenied ? '🔒 Live-Räume noch nicht freigeschaltet.' : 'Live-Räume sind nicht verfügbar.' })); return; }
+  const o = occ();
+  $('homeOnlineCount').textContent = o.online.length + ' online';
+  box.replaceChildren(...CONFIG.rooms.map(r => {
+    const ppl = o.rooms[r.id] || [];
+    const names = ppl.slice(0, 3).map(p => p.nickname + youSuffix(p)).join(', ') + (ppl.length > 3 ? ' +' + (ppl.length - 3) : '');
+    return h('div', { class: 'hr' }, h('span', { text: r.icon + ' ' + r.name }), h('span', { class: 'muted', text: names || '–' }));
+  }));
+}
+function renderRoomList() {
+  const o = occ(), avail = roomsAvailable();
+  $('roomList').replaceChildren(...CONFIG.rooms.map(r => {
+    const ppl = o.rooms[r.id] || [], here = S.room === r.id;
+    return h('button', {
+      type: 'button', class: 'roomcard roomscene scene-' + r.id + (here ? ' here' : ''), 'data-room': r.id, disabled: !avail,
+      'aria-pressed': here ? 'true' : 'false', 'aria-label': r.name + ', ' + (ppl.length === 1 ? '1 Person' : ppl.length + ' Personen') + (here ? ', du bist hier' : ', betreten'),
+      onclick: () => joinRoom(r.id)
+    },
+      h('span', { class: 'rc-top' }, h('span', { class: 'rc-icon', 'aria-hidden': 'true', text: r.icon }), h('span', { class: 'rc-name', text: r.name }),
+        h('span', { class: 'rc-count', text: here ? '⭐ Du bist hier' : ppl.length ? ppl.length + ' da' : 'leer' })),
+      h('span', { class: 'rc-desc', text: r.desc }),
+      h('span', { class: 'faces', 'aria-hidden': 'true' }, ...faces(ppl, 7)));
+  }));
+  $('lobbyText').textContent = avail && o.lobby.length ? '🛋️ Online, aber in keinem Raum: ' + o.lobby.map(p => p.nickname + youSuffix(p) + (p.status === 'away' ? ' 💤' : '')).join(', ') : '';
+}
+function renderRoomPeople() {
+  const ppl = S.room ? (occ().rooms[S.room] || []) : [];
+  $('roomPeople').replaceChildren(...ppl.map(p => h('span', { class: 'person' }, face(p), p.nickname + youSuffix(p) + (p.status === 'away' ? ' 💤' : ''))));
+}
+function renderRoomStage() {
+  const notice = $('roomsNotice');
+  if (S.roomsDenied) {
+    notice.replaceChildren(h('b', { text: '🔒 Die Live-Räume sind noch gesperrt. ' }), S.isAdmin
+      ? 'Die Firestore-Regeln sind noch auf dem alten Stand. Öffne «⚙️ Setup», kopiere die Regeln und veröffentliche sie in der Firebase-Konsole unter Firestore → Regeln. Danach diese Seite neu laden.'
+      : 'Die Firestore-Regeln müssen noch aktualisiert werden. Bitte gib der Person Bescheid, die die App betreut.');
+    notice.classList.remove('hidden');
+  } else if (S.profilesLoaded && !me()) {
+    notice.replaceChildren('👋 Bitte ', h('button', { type: 'button', class: 'linkbtn', 'data-goto': 'profile', text: 'erstelle zuerst dein Profil' }), ', damit die anderen sehen, wer da ist.');
+    notice.classList.remove('hidden');
+  } else notice.classList.add('hidden');
+  const r = S.room ? roomById(S.room) : null;
+  $('roomEmpty').classList.toggle('hidden', !!r);
+  $('roomActive').classList.toggle('hidden', !r);
+  $('page-rooms').classList.toggle('inroom', !!r);
+  if (!r) return;
+  $('roomHead').className = 'roomhead roomscene scene-' + r.id;
+  $('roomGlow').textContent = r.icon;
+  $('roomTitle').textContent = r.icon + ' ' + r.name;
+  $('roomDesc').textContent = r.desc;
+  renderRoomPeople(); renderChat();
+}
+function msgTime(ms) {
+  if (typeof ms !== 'number') return '';
+  const d = new Date(ms);
+  const t = d.toLocaleTimeString('de-CH', { timeZone: CONFIG.timeZone, hour: '2-digit', minute: '2-digit' });
+  const k = C.dateKeyInZone(d, CONFIG.timeZone);
+  return k === S.today ? t : C.formatDayKey(k).slice(0, 6) + ' ' + t;
+}
+function msgEl(m) {
+  const mine = isMe(m.uid);
+  const live = S.profiles.find(p => p.uid === m.uid);
+  const name = m.nickname || (live && live.nickname) || '?';
+  return h('div', { class: 'msg' + (mine ? ' mine' : '') + (m.pending ? ' pending' : ''), 'data-id': m.id },
+    h('span', { class: 'face', style: '--av:' + C.avatarColor(m.uid), 'aria-hidden': 'true', text: C.initial(name) }),
+    h('div', { class: 'bubble' },
+      h('div', { class: 'meta' }, h('b', { text: mine ? 'Du' : name }), h('span', { text: msgTime(m.createdAtMs) + (m.pending ? ' · sendet …' : '') }),
+        (mine || S.isAdmin) ? h('button', { type: 'button', class: 'del', title: 'Nachricht löschen', 'aria-label': 'Nachricht von ' + name + ' löschen', text: '✕', onclick: () => deleteMsg(m) }) : null),
+      h('div', { class: 'text', text: m.text })));
+}
+function renderChat() {
+  const log = $('chatLog');
+  if (!S.room) { log.replaceChildren(); return; }
+  if (!S.roomLoaded) { log.replaceChildren(h('div', { class: 'sysline', text: 'Nachrichten werden geladen …' })); return; }
+  const nearBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 90;
+  const items = S.roomMsgs.map(m => ({ t: typeof m.createdAtMs === 'number' ? m.createdAtMs : serverNow(), m }))
+    .concat(S.roomEvents.map(e => ({ t: e.ts, e })))
+    .sort((a, b) => a.t - b.t);
+  if (!items.length) log.replaceChildren(h('div', { class: 'empty', text: '🤫 Noch ruhig hier. Sag Hallo!' }));
+  else log.replaceChildren(...items.map(it => it.e ? h('div', { class: 'sysline', text: it.e.text }) : msgEl(it.m)));
+  if (nearBottom || S.forceScroll) { log.scrollTop = log.scrollHeight; S.forceScroll = false; }
+}
+
+/* --- Neue Version erkennen (GitHub Pages / Hosting) --- */
+let updateShown = false;
+async function checkForUpdate() {
+  if (updateShown || !/^https?:$/.test(location.protocol) || typeof fetch !== 'function') return;
+  try {
+    const r = await fetch(location.pathname + '?v=' + Date.now(), { cache: 'no-store' });
+    if (!r.ok) return;
+    const m = /^\s*version:\s*'(\d+\.\d+\.\d+)'/m.exec(await r.text());
+    if (m && C.compareVersions(m[1], CONFIG.version) > 0) {
+      updateShown = true;
+      $('updateText').textContent = '✨ Version ' + m[1] + ' ist online (du nutzt ' + CONFIG.version + ').';
+      $('updateBar').classList.remove('hidden');
+    }
+  } catch (e) { /* offline – später nochmals */ }
+}
+
+function buildRules() {
+  const src = (($('firestoreRulesSource') || {}).textContent || '').trim();
+  const dom = String(CONFIG.allowedEmailDomain || '').toLowerCase().replace(/[^a-z0-9.-]/g, '');
+  const emailRe = dom ? '.*@' + dom.replace(/\./g, '[.]') + '$' : '.*';
+  const kinds = CONFIG.reactions.map(r => "'" + String(r.id).replace(/[^a-z0-9-]/g, '') + "'").join(', ');
+  return src.replace('__EMAIL_RE__', () => emailRe).replace('__REACTION_KINDS__', () => kinds).replace('__VERSION__', () => CONFIG.version);
+}
 function renderSetup() {
   const local = S.mode === 'local';
   $('modeBadge').textContent = local ? '💻 Lokaler Modus' : '☁️ Firebase-Modus';
   $('modeText').textContent = local
-    ? 'Alle Daten werden nur in diesem Browser gespeichert (Profil, Kundenkarten, Kalender, Wichteln). Das Passwort ist hier nur eine Sichtsperre. Für das Team: Datei als index.html auf Firebase Hosting veröffentlichen – dann schaltet die App automatisch auf gemeinsame Daten und echte Konten um.'
+    ? 'Alle Daten werden nur in diesem Browser gespeichert (Profil, Kundenkarten, Kalender, Wichteln, Räume). Das Passwort ist hier nur eine Sichtsperre. Für das Team: Firebase-Werte bei firebaseConfig eintragen und die Datei als index.html veröffentlichen (Anleitung unten). Dann schaltet die App auf gemeinsame Daten und echte Konten um.'
     : 'Daten liegen in Firestore und sind nur für angemeldete, bestätigte ' + (CONFIG.allowedEmailDomain ? '@' + CONFIG.allowedEmailDomain + '-' : '') + 'Konten zugänglich. Du bist Admin.';
   $('localTools').classList.toggle('hidden', !local);
-  $('rulesText').value = (($('firestoreRulesSource') || {}).textContent || '').trim();
+  const rooms = local ? '✅ Aktiv (lokal, zum Ausprobieren auch in zwei Tabs)'
+    : S.roomsDenied ? '🔒 Gesperrt: Firestore-Regeln unten kopieren und in Firebase veröffentlichen, dann neu laden'
+    : S.roomsChecked ? '✅ Aktiv' : '⏳ Wird geprüft (sobald dein Profil gespeichert ist)';
+  $('diagList').replaceChildren(...[
+    ['App-Version', CONFIG.version],
+    ['Modus', local ? 'Lokal (nur dieser Browser)' : 'Firebase' + (S.fbProject ? ' · Projekt «' + S.fbProject + '»' : '')],
+    ['Live-Räume', rooms],
+    ['Adresse', location.protocol === 'file:' ? 'Lokale Datei' : location.host + location.pathname]
+  ].map(([k, v]) => h('li', null, h('b', { text: k + ': ' }), v)));
+  $('rulesText').value = buildRules();
   $('versionText').textContent = 'Version ' + CONFIG.version + (local ? ' · lokal' : ' · Firebase');
 }
-function renderAll() { renderHeader(); renderHome(); renderCalendar(); renderCustomers(); renderOwnerList(); renderSanta(); fillProfileForm(false); renderSetup(); }
+function renderAll() { renderHeader(); renderHome(); renderCalendar(); renderCustomers(); renderOwnerList(); renderSanta(); fillProfileForm(false); renderSetup(); renderPresence(); renderRoomStage(); updateUnread(); }
 
 function bindEvents() {
   document.querySelectorAll('.nav button').forEach(b => b.addEventListener('click', () => nav(b.dataset.page)));
   document.addEventListener('click', e => { const g = e.target.closest && e.target.closest('[data-goto]'); if (g) nav(g.dataset.goto); });
-  $('logoutBtn').addEventListener('click', () => S.store.logout().catch(err => toast(errMsg(err))));
+  $('logoutBtn').addEventListener('click', () => signOut().catch(err => toast(errMsg(err))));
+  // Live-Räume
+  $('reactBar').replaceChildren(...CONFIG.reactions.map(k => h('button', { type: 'button', title: k.label, 'aria-label': 'Reaktion senden: ' + k.label, text: k.e, onclick: () => sendReaction(k.id) })));
+  $('chatForm').addEventListener('submit', sendChat);
+  $('leaveRoomBtn').addEventListener('click', leaveRoom);
+  $('updateReloadBtn').addEventListener('click', () => { try { location.reload(); } catch (e) { /* ignore */ } });
+  $('updateLaterBtn').addEventListener('click', () => $('updateBar').classList.add('hidden'));
+  ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(ev => window.addEventListener(ev, () => {
+    const wasIdle = Date.now() - S.lastActivity > CONFIG.presence.idleAfterMs;
+    S.lastActivity = Date.now();
+    if (wasIdle) presenceTick(true);
+  }, { passive: true }));
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) return;
+    S.lastActivity = Date.now();
+    presenceTick(true);
+    if (S.page === 'rooms' && S.unread) { S.unread = 0; updateUnread(); }
+    renderPresence();
+    checkForUpdate();
+  });
+  window.addEventListener('pagehide', () => { presenceOffline(); });
   $('kindBtn').addEventListener('click', () => { const list = C.CHALLENGES; $('kindIdea').textContent = '💝 ' + list[Math.floor(Math.random() * list.length)]; });
   $('todayDoorBtn').addEventListener('click', () => {
     const i = CAL_DAYS.indexOf(S.today);
@@ -1682,7 +2350,7 @@ async function init() {
   setupLoginUI();
   setAuthMode('login');
   try {
-    if (S.mode === 'firebase') { const fb = await loadFirebase(); S.store = FirebaseStore(fb, await firebaseConfig(fb)); }
+    if (S.mode === 'firebase') { const fb = await loadFirebase(); const cfg = await firebaseConfig(fb); S.fbProject = C.clean(cfg && cfg.projectId, 80); S.store = FirebaseStore(fb, cfg); }
     else S.store = LocalStore();
   } catch (e) {
     showView('loginView');
@@ -1691,9 +2359,16 @@ async function init() {
     return;
   }
   setInterval(() => { const t = todayKey(); if (t !== S.today) { S.today = t; if (S.user) { renderHeader(); renderHome(); renderCalendar(); } } }, 30000);
+  setInterval(() => presenceTick(false), CONFIG.presence.heartbeatMs);
+  setInterval(() => { if (S.user) { trackRoomArrivals(); renderPresence(); } }, 20000);
+  setInterval(checkForUpdate, CONFIG.versionCheckMs);
+  setTimeout(checkForUpdate, 5000);
   S.store.onAuth(u => { onAuthChanged(u).catch(e => toast('⚠️ ' + errMsg(e))); });
 }
-window.WZ = { S, CONFIG, setToday(k) { window.__WZ_TODAY__ = k; S.today = todayKey(); if (S.user) { renderHeader(); renderHome(); renderCalendar(); } } };
+window.WZ = {
+  S, CONFIG, buildRules, checkForUpdate,
+  setToday(k) { window.__WZ_TODAY__ = k; S.today = todayKey(); if (S.user) { renderHeader(); renderHome(); renderCalendar(); } }
+};
 init();
 
 </script>
